@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 参数
-IN_FILE=$1
+IN_FILE="data/$1"
 N_EPOCH=$2
 CTX_LEN=$3
 

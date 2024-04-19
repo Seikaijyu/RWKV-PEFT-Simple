@@ -14,3 +14,5 @@ train.py
 merge.py
 
 __pycache__
+
+!/data/sample.jsonl
