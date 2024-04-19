@@ -1,6 +1,7 @@
 # RWKV-PEFT-Simple
 
 **此项目是为[RWKV-PEFT](https://github.com/JL-er/RWKV-PEFT)提供的快捷微调包**
+
 **注意：本项目默认你有一定的动手和学习能力**
 #### 1. 准备工作（linux和windows通用）
 * 进入以上RWKV-PEFT的github链接下载RWKV-PEFT包，此时应该能得到名为`RWKV-PEFT-main.zip`的压缩包
