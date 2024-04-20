@@ -5,19 +5,19 @@ FINETUNE_MODE="pissa"
 # 训练的RWKV模型版本，可选值为：v5, v6
 MODEL_VERSION="v6"
 # 量化方式，可选值为：none, 4bit, nf4, fp4
-QUANT="4bit"
+QUANT="none"
 # 模型路径
 MODEL_PATH=model/RWKV-x060-World-3B-v2.1-20240417-ctx4096.pth
 # 数据路径
-DATA_PATH=data/rp-small
+DATA_PATH=data/o
 # 输出路径
 OUTPUT_PATH=output
 # 训练的回合数
 EPOCH_COUNT=20
 # 回合步数
-EPOCH_STEPS=4480 
+EPOCH_STEPS=862
 # 上下文长度
-CTX_LEN=5024
+CTX_LEN=4096
 # 精度，可选值为：fp32, bf16, fp16
 PRECISION=bf16 
 # 初始学习率
@@ -71,13 +71,13 @@ lora_r=96
 lora_alpha=192
 # LORA模型的dropout值 
 lora_dropout=0.01
-# pissa的svd迭代次数
-svd_niter=100
+# pissa的快速奇异值分解的迭代次数，迭代次数越高损失越低，但是速度越慢
+svd_niter=96
 
 # ------------------lisa设置参数----------------------
-# LISA模型的r值
+# LISA模型的r值，代表采样的层数
 lisa_r=2
-# LISA模型的k值
+# LISA模型的k值，代表LISA采样的频率
 lisa_k=100
 
 

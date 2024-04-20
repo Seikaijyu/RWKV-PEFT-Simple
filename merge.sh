@@ -4,7 +4,7 @@ MODEL_PATH=RWKV-x060-World-3B-v2.1-20240417-ctx4096.pth
 PISSA_EPOCH=$1
 
 # 量化精度，可用参数为：none,4bit,nf4,fp4
-QUANT="4bit"
+QUANT="none"
 # 微调模式，可用参数为：lora,pissa
 TRAIN_TYPE="pissa"
 # LORA_ALPHA参数，仅用于lora模式，pissa模式微调时不需要对应
