@@ -7,19 +7,19 @@ MODEL_VERSION="v6"
 # 量化方式，可选值为：none, 4bit, nf4, fp4
 QUANT="none"
 # 模型路径
-MODEL_PATH=model/RWKV-x060-World-3B-v2.1-20240417-ctx4096-roleplay-base.pth
+MODEL_PATH=model/RWKV-x060-World-3B-v2.1-20240417-ctx4096.pth
 # 数据路径
-DATA_PATH=data/train
+DATA_PATH=data/trainx
 # 输出路径
 OUTPUT_PATH=output
 # 训练的回合数
 EPOCH_COUNT=20
 # 回合步数
-EPOCH_STEPS=800
+EPOCH_STEPS=2128
 # 上下文长度
 CTX_LEN=4096
 # 精度，可选值为：fp32, bf16, fp16
-PRECISION=bf16 
+PRECISION=bf16
 # 初始学习率
 LR_INIT=5e-5
 # 最终学习率
@@ -39,7 +39,7 @@ DEEPSPEED_STRATEGY=deepspeed_stage_2
 # 梯度复制
 GRAD_CP=1
 # 数据集获取，可选值为：get，pad，only
-DATASET_GET="get"
+DATASET_GET="only"
 # ------------------不常用训练参数----------------------
 # 开始训练的回合，可以用来恢复训练
 EPOCH_BEGIN=0
@@ -164,11 +164,11 @@ if [ "$QUANT" != "none" ]; then
 fi
 
 case "$DATASET_GET" in
-"pad"|"get"|"only"|"auto")
+"pad"|"get"|"only")
     echo "-------------使用$DATASET_GET模式读取数据-------------"
     ;;
 *)
-    echo "!!!!!!!!!!!!!不支持的数据集获取参数$DATASET_GET，仅支持pad, get, only, auto!!!!!!!!!!!!!"
+    echo "!!!!!!!!!!!!!不支持的数据集获取参数$DATASET_GET，仅支持pad, get, only!!!!!!!!!!!!!"
     exit 1
     ;;
 esac
