@@ -1,5 +1,5 @@
 # 模型路径
-MODEL_PATH=RWKV-x060-World-3B-v2.1-20240417-ctx4096.pth
+MODEL_PATH=RWKV-x060-World-3B-v2.1-20240417-ctx4096-roleplay-base.pth
 # 训练回合数，由命令行传入
 PISSA_EPOCH=$1
 
@@ -8,7 +8,7 @@ QUANT="none"
 # 微调模式，可用参数为：lora,pissa
 TRAIN_TYPE="pissa"
 # LORA_ALPHA参数，仅用于lora模式，pissa模式微调时不需要对应
-LORA_ALPHA=192
+LORA_ALPHA=256
 
 
 

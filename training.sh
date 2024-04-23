@@ -7,15 +7,15 @@ MODEL_VERSION="v6"
 # 量化方式，可选值为：none, 4bit, nf4, fp4
 QUANT="none"
 # 模型路径
-MODEL_PATH=model/RWKV-x060-World-3B-v2.1-20240417-ctx4096.pth
+MODEL_PATH=model/RWKV-x060-World-3B-v2.1-20240417-ctx4096-roleplay-base.pth
 # 数据路径
-DATA_PATH=data/o
+DATA_PATH=data/train
 # 输出路径
 OUTPUT_PATH=output
 # 训练的回合数
 EPOCH_COUNT=20
 # 回合步数
-EPOCH_STEPS=862
+EPOCH_STEPS=800
 # 上下文长度
 CTX_LEN=4096
 # 精度，可选值为：fp32, bf16, fp16
@@ -33,13 +33,13 @@ EPOCH_SAVE=1
 # 前缀网络预处理
 PRE_FFN=1
 # 梯度累计
-MINI_BSZ=32
+MINI_BSZ=8
 # 优化策略, 可选值为：deepspeed_stage_1, deepspeed_stage_2, deepspeed_stage_3
 DEEPSPEED_STRATEGY=deepspeed_stage_2
 # 梯度复制
 GRAD_CP=1
-# 数据集获取，pad或者get或者only或者auto（only和get的混合模式）
-DATASET_GET="auto"
+# 数据集获取，可选值为：get，pad，only
+DATASET_GET="get"
 # ------------------不常用训练参数----------------------
 # 开始训练的回合，可以用来恢复训练
 EPOCH_BEGIN=0

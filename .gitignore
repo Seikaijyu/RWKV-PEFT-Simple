@@ -8,6 +8,7 @@ merge_pissa.*
 /merge/*
 /model/*
 /output/*
+/小渝
 
 train.py
 
