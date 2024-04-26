@@ -70,9 +70,9 @@ lora_parts=att,ffn,time,ln
 # LORA模型路径，代表从哪个LORA模型开始微调
 lora_load="rwkv-0"
 # LORA模型的r值
-lora_r=32
+lora_r=96
 # LORA模型的alpha值
-lora_alpha=64
+lora_alpha=192
 # LORA模型的dropout值 
 lora_dropout=0.01
 # pissa的快速奇异值分解的迭代次数，迭代次数越高损失越低，但是速度越慢
