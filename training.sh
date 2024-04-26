@@ -6,16 +6,20 @@ FINETUNE_MODE="pissa"
 MODEL_VERSION="v6"
 # 量化方式，可选值为：none, 4bit, nf4, fp4
 QUANT="none"
+# 微调embedding层，可选值为：0（关闭）, 1（开启）
+# 开启时会同时影响embedding层和head层，embedding层是模型理解输入数据的基础，而head层则直接影响模型的输出
+# 但是开启后会需要更多显存，同时会增加训练时间
+EMB_FINETUNE=1
 # 模型路径
 MODEL_PATH=model/RWKV-x060-World-3B-v2.1-20240417-ctx4096.pth
 # 数据路径
-DATA_PATH=data/trainx
+DATA_PATH=data/train
 # 输出路径
 OUTPUT_PATH=output
 # 训练的回合数
 EPOCH_COUNT=20
 # 回合步数
-EPOCH_STEPS=2128
+EPOCH_STEPS=800
 # 上下文长度
 CTX_LEN=4096
 # 精度，可选值为：fp32, bf16, fp16
@@ -33,13 +37,13 @@ EPOCH_SAVE=1
 # 前缀网络预处理
 PRE_FFN=1
 # 梯度累计
-MINI_BSZ=8
+MINI_BSZ=32
 # 优化策略, 可选值为：deepspeed_stage_1, deepspeed_stage_2, deepspeed_stage_3
 DEEPSPEED_STRATEGY=deepspeed_stage_2
 # 梯度复制
 GRAD_CP=1
 # 数据集获取，可选值为：get，pad，only
-DATASET_GET="only"
+DATALOAD="get"
 # ------------------不常用训练参数----------------------
 # 开始训练的回合，可以用来恢复训练
 EPOCH_BEGIN=0
@@ -66,13 +70,13 @@ lora_parts=att,ffn,time,ln
 # LORA模型路径，代表从哪个LORA模型开始微调
 lora_load="rwkv-0"
 # LORA模型的r值
-lora_r=96
+lora_r=32
 # LORA模型的alpha值
-lora_alpha=192
+lora_alpha=64
 # LORA模型的dropout值 
 lora_dropout=0.01
 # pissa的快速奇异值分解的迭代次数，迭代次数越高损失越低，但是速度越慢
-svd_niter=96
+svd_niter=4
 
 # ------------------lisa设置参数----------------------
 # LISA模型的r值，代表采样的层数
@@ -163,12 +167,25 @@ if [ "$QUANT" != "none" ]; then
     esac
 fi
 
-case "$DATASET_GET" in
+if [ "$EMB_FINETUNE" = 0 ]; then
+    echo "-------------不微调embedding层-------------"
+    EMB=""
+else if [ "$EMB_FINETUNE" = 1 ]; then
+    echo "-------------微调embedding层-------------"
+    EMB="--emb"
+else
+    echo "!!!!!!!!!!!!!不支持的微调embedding层参数$EMB_FINETUNE，仅支持0（关闭）, 1（开启）!!!!!!!!!!!!!"
+    exit 1
+fi
+fi
+
+
+case "$DATALOAD" in
 "pad"|"get"|"only")
-    echo "-------------使用$DATASET_GET模式读取数据-------------"
+    echo "-------------使用$DATALOAD模式读取数据-------------"
     ;;
 *)
-    echo "!!!!!!!!!!!!!不支持的数据集获取参数$DATASET_GET，仅支持pad, get, only!!!!!!!!!!!!!"
+    echo "!!!!!!!!!!!!!不支持的数据集获取参数$DATALOAD，仅支持pad, get, only!!!!!!!!!!!!!"
     exit 1
     ;;
 esac
@@ -182,8 +199,9 @@ if [ "$FINETUNE_MODE" = "lora" ]; then
     --n_layer $N_LAYER --n_embd $EMBD_SIZE \
     --pre_ffn $PRE_FFN --head_qk $HEAD_QK --lr_init $LR_INIT --lr_final $LR_FINAL --warmup_steps $WARMUP_STEPS --beta1 $BETA1 --beta2 $BETA2 --adam_eps 1e-8 \
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
-    --accumulate_grad_batches $MINI_BSZ --dataset_get $DATASET_GET\
-    --lora_load $lora_load --lora --lora_r $lora_r --lora_alpha $lora_alpha --lora_dropout $lora_dropout --lora_parts=$lora_parts $V6_TRAIN
+    --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD\
+    --lora_load $lora_load --lora --lora_r $lora_r --lora_alpha $lora_alpha \
+    --lora_dropout $lora_dropout --lora_parts=$lora_parts $V6_TRAIN $EMB
 else if [ "$FINETUNE_MODE" = "lisa" ]; then
    python3 train.py --load_model $MODEL_PATH \
     --proj_dir $OUTPUT_PATH --data_file $DATA_PATH \
@@ -192,8 +210,8 @@ else if [ "$FINETUNE_MODE" = "lisa" ]; then
     --n_layer $N_LAYER --n_embd $EMBD_SIZE \
     --pre_ffn $PRE_FFN --head_qk $HEAD_QK --lr_init $LR_INIT --lr_final $LR_FINAL --warmup_steps $WARMUP_STEPS --beta1 $BETA1 --beta2 $BETA2 --adam_eps $ADAM_EPS \
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
-    --accumulate_grad_batches $MINI_BSZ --dataset_get $DATASET_GET\
-    --LISA --lisa_r $lisa_r --lisa_k $lisa_k $V6_TRAIN
+    --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD\
+    --LISA --lisa_r $lisa_r --lisa_k $lisa_k $V6_TRAIN $EMB
 else if [ "$FINETUNE_MODE" = "pissa" ]; then
    python3 train.py --load_model $MODEL_PATH \
     --proj_dir $OUTPUT_PATH --data_file $DATA_PATH \
@@ -202,9 +220,9 @@ else if [ "$FINETUNE_MODE" = "pissa" ]; then
     --n_layer $N_LAYER --n_embd $EMBD_SIZE \
     --pre_ffn $PRE_FFN --head_qk $HEAD_QK --lr_init $LR_INIT --lr_final $LR_FINAL --warmup_steps $WARMUP_STEPS --beta1 $BETA1 --beta2 $BETA2 --adam_eps $ADAM_EPS \
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
-    --accumulate_grad_batches $MINI_BSZ --dataset_get $DATASET_GET \
+    --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD \
     --lora_load $lora_load --lora --lora_r $lora_r --lora_alpha $lora_alpha --lora_dropout $lora_dropout --lora_parts=$lora_parts \
-    --PISSA --svd_niter $svd_niter $V6_TRAIN
+    --PISSA --svd_niter $svd_niter $V6_TRAIN $EMB
 else
     echo "!!!!!!!!!!!!!不支持的微调模式$FINETUNE_MODE，仅支持lora, pissa, lisa!!!!!!!!!!!!!"
     exit 1

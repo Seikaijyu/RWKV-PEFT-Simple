@@ -1,5 +1,5 @@
 # 模型路径
-MODEL_PATH=RWKV-x060-World-3B-v2.1-20240417-ctx4096-roleplay-base.pth
+MODEL_PATH=RWKV-x060-World-3B-v2.1-Claude-nsfw.pth
 # 训练回合数，由命令行传入
 PISSA_EPOCH=$1
 
