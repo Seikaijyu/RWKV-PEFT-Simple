@@ -28,7 +28,7 @@
 #### 6. 运行测试
 * 此时你已经完成了微调的所有步骤，现在只需要找到`/merge`文件夹内合并好的模型文件，放到[RWKV-Runner](https://github.com/josStorer/RWKV-Runner)或者[Ai00](https://github.com/Ai00-X/ai00_server)等RWKV推理项目中运行测试即可（这里我推荐RWKV-Runner）
 * 测试时推荐多调整`Temperature`，`Top_P`，`Presence Penalty`，`Frequency Penalty`参数进行测试
-## 如果在读完此教程后依然不理解如何使用，建议查看`training.sh`文件和`merge.sh`文件中的注释，能让你更快上手，也开业使用GPT阅读并询问GPT，弄清不理解的部分
+## 如果在读完此教程后依然不理解如何使用，建议查看`training.sh`文件和`merge.sh`文件中的注释，能让你更快上手，也可以使用GPT阅读并询问GPT，弄清不理解的部分
 ### 祝您能成功调出自己喜欢的模型~
 
 ###### by Seikaijyu
