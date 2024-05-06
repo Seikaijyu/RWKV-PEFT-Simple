@@ -6,9 +6,9 @@ PISSA_EPOCH=$1
 # 训练使用的量化精度，可用参数为：none,4bit,nf4,fp4
 QUANT="none"
 # 训练使用的微调模式，可用参数为：lora, pissa, state
-TRAIN_TYPE="state"
+TRAIN_TYPE="pissa"
 # LORA_ALPHA参数，仅lora微调时需要设置，其它模型模式微调时不需要对应
-LORA_ALPHA=256
+LORA_ALPHA=64
 
 
 

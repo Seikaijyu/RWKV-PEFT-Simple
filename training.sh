@@ -18,16 +18,16 @@ QUANT="none"
 EMB_FINETUNE=0
 # 模型路径
 # 对应的是在model文件夹下需要微调的模型的文件名
-MODEL_PATH=RWKV-x060-World-3B-v2.1-20240417-ctx4096.pth
+MODEL_PATH=model.pth
 # 数据路径
 # 对应的是在data文件夹下需要微调的使用数据的文件名
-DATA_PATH=xuexue-new-cleaned
+DATA_PATH=dataname
 # 训练的回合数，达到回合数后会停止训练
 # 仅在数据读取模式为pad和only时生效
 EPOCH_COUNT=20
 # 回合步数
 # 应该根据训练数据的条数和微批次大小调整，公式为：数据集条数/微批次大小=回合步数
-EPOCH_STEPS=472
+EPOCH_STEPS=200
 # 上下文长度
 # 使用./make_tokenize.sh {数据集名称}.jsonl {训练回合数}脚本进行数据分词时能得到如：### max_length = 208 这样的输出
 # 其中208就是数据中最长的数据的长度，在pad模式和only模式中，应该填入此数值以保证数据能够完全被训练
@@ -35,7 +35,7 @@ EPOCH_STEPS=472
 # 使用./make_tokenize.sh {数据集名称}.jsonl {训练回合数} {训练使用的上下文长度}
 # 生成数据集时，会输出的如### magic_prime = 149 (for ctxlen 4096)的magic_prime
 # 其中149为magic_prime，应该MAGIC_PRIME参数，而4096则应该填入此处
-CTX_LEN=457
+CTX_LEN=1024
 # 精度，可选值为：fp32, bf16, fp16，通常建议使用bf16，节省显存同时保证了训练精度
 PRECISION=bf16
 # 如果使用state模式微调，lr最好调高，建议1，使用其它模式建议5e-5到1e-4之间，优先选择5e-5
@@ -59,7 +59,7 @@ EPOCH_SAVE=1
 # 前缀网络预处理
 PRE_FFN=1
 # 梯度累计，如果显存不够无法调整微批次大小，可以适当调高此值
-MINI_BSZ=16
+MINI_BSZ=1
 # 优化策略, 可选值为：deepspeed_stage_1, deepspeed_stage_2, deepspeed_stage_3
 # 建议使用deepspeed_stage_2节省显存的同时也能保证微调速度
 # deepspeed_stage_1: 完全使用显卡内存，不适用于显存较小的显卡，在显存足够的时候速度较快，使用量化微调时建议开启以加速训练
@@ -108,18 +108,18 @@ lora_load="rwkv-0"
 # LORA模型的r值
 # 越大的r值，微调的效果越好，同时也能让pissa微调的奇异值分解精度越高，但是显存占用越高，建议最大128
 # 如果显存或者RAM不足，应该调低此值，一般训练使用32或者64即可，实在不够也可以用16
-lora_r=128
+lora_r=32
 # LORA模型的alpha值
 # 此值应该配合r值调整
 # 计算公式为：lora_alpha=lora_r*2
-lora_alpha=256
+lora_alpha=64
 # LORA模型的dropout值 
 lora_dropout=0.01
 # pissa的快速奇异值分解的迭代次数，迭代次数越高损失越低，但是初始化的速度就越慢
 # 如果需要速度，可以适当调低此值，但是损失会增加
 # 一般来说svd_niter=16后就已经非常接近奇异值分解的结果了，往后的迭代次数对结果影响不会很大
 # 此外，lora_r对于svd_niter的影响也很大，lora_r越大，训练损失越低，但是svd_niter也需要相应增加
-svd_niter=4
+svd_niter=16
 
 # ------------------lisa设置参数----------------------
 # LISA模型的r值，代表采样的层数
