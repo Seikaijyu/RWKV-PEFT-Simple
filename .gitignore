@@ -17,3 +17,5 @@ merge.py
 __pycache__
 
 !/data/sample.jsonl
+
+merge_state.py
