@@ -12,7 +12,8 @@ MODEL_VERSION="v6"
 # 一般推荐使用nf4，分布更均匀
 QUANT="none"
 # 微调embedding层，可选值为：0（关闭）, 1（开启）
-# 开启时会同时影响embedding层和head层，embedding层是模型理解输入数据的基础，而head层则直接影响模型的输出
+# 开启时不会冻结embedding层和head层，这两层和lora_r没有任何关系，调高也不会影响这两层的微调
+# embedding层是模型理解输入数据的基础，而head层则直接影响模型的输出
 # 但是开启后会需要更多显存，同时会增加训练时间（仅在lora和pissa微调下有效）
 EMB_FINETUNE=0
 # 模型路径
