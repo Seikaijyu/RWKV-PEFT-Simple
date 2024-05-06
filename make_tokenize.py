@@ -10,7 +10,7 @@ from src.binidx import MMapIndexedDataset
 python make_data.py demo.jsonl 3 4096
 
 这将会：
-==> 洗牌并复制 demo.jsonl (为了3个周期，适合微调) 注意：对于大的 jsonl 文件，这将会非常慢，我们需要更高效的代码。
+==> 洗牌并复制 demo.jsonl (为了3个周期，适合微调) 
 ==> 加载 jsonl 并进行标记化
 ==> 保存为 demo.bin 和 demo.idx
 ==> 计算 ctxlen 4096 的 "magic_prime"
@@ -33,8 +33,11 @@ N_EPOCH = int(sys.argv[2].strip())
 IN_FILE = sys.argv[1].strip()
 OUT_PATH = os.path.dirname(IN_FILE)
 OUT_NAME = os.path.splitext(os.path.basename(IN_FILE))[0]
-CTX_LEN = int(sys.argv[3].strip())
-
+CTX_LEN = 0
+try:
+    CTX_LEN = int(sys.argv[3].strip())
+except:
+    pass
 with open(IN_FILE, "r", encoding="utf-8") as file:
     non_empty_lines = [line.strip() for line in file if line.strip()]
 
@@ -75,9 +78,11 @@ class MMapIndexedDatasetBuilder(object):
 
 builder = MMapIndexedDatasetBuilder(f"{OUT_NAME}.bin")
 cnt = 0
-
+max_size = 0
 for line in shuffled_lines:
     raw = json.loads(line)["text"]
+    if len(raw) > max_size:
+        max_size = len(raw)
     out = tokenizer.encode(raw)
     if tokenizer.decode(out) != raw:
         print("ERROR" * 100)
@@ -126,10 +131,12 @@ for idx in TODO :
 
 print(f"{'-'*80}\n### Final {OUT_NAME}.bin/idx has {data_size} tokens, {data_len} items. Dtype {data._index.dtype}")
 
-if data_size >= CTX_LEN * 3:
+if CTX_LEN > 0 and data_size >= CTX_LEN * 3:
     n_chunk = int(data_size // CTX_LEN) - 1
     for i in range(n_chunk, 0, -1):
         if i % 3 == 2:
             if is_prime(i):
                 print(f"\n### magic_prime = {i} (for ctxlen {CTX_LEN})\n")
-                exit(0)
+                break
+            
+print(f"### max_length = {max_size}")
