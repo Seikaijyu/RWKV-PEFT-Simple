@@ -4,6 +4,8 @@ import numpy as np
 from tokenizer.rwkv_tokenizer import TRIE_TOKENIZER
 tokenizer = TRIE_TOKENIZER("tokenizer/rwkv_vocab_v20230424.txt")
 from src.binidx import MMapIndexedDataset
+import math
+
 """
 如何使用：
 
@@ -28,7 +30,23 @@ bb/aa/dd/cc/dd/aa/bb/cc/dd/bb/cc/aa/
 
 其中数据重复了3次 (每次都有不同的洗牌)
 """
-# 优化点1: 减少文件读写，直接在内存中处理数据
+
+def find_factors_range(n, range_):
+    def find_factors(n):
+        factors = [i for i in range(2, math.isqrt(n) + 1) if n % i == 0]
+        factors += [n // i for i in factors if n // i != i]
+        return sorted(factors)[:10] if factors else [n]
+
+    return {i: find_factors(i) for i in range(n - range_, n + range_ + 1)}
+# 输出字典
+def pretty_print_dict_factors(d):
+    for key, value in d.items():
+        value_array = np.array(value)
+        max_len = max(len("MICRO_BSZ or MINI_BSZ"), len("EPOCH_STEPS"))
+        print(f"\n{key}")
+        print(f"{'MINI_BSZ'.ljust(max_len)} = {value}")
+        print(f"{'EPOCH_STEPS'.ljust(max_len)} = {list(key // value_array)}")
+# 减少文件读写，直接在内存中处理数据
 N_EPOCH = int(sys.argv[2].strip())
 IN_FILE = sys.argv[1].strip()
 OUT_PATH = os.path.dirname(IN_FILE)
@@ -41,7 +59,7 @@ except:
 with open(IN_FILE, "r", encoding="utf-8") as file:
     non_empty_lines = [line.strip() for line in file if line.strip()]
 
-# 优化点2: 在内存中重复并洗牌，避免重复写入和读取文件
+# 在内存中重复并洗牌，避免重复写入和读取文件
 shuffled_lines = []
 for _ in range(N_EPOCH):
     random.shuffle(non_empty_lines)
@@ -79,8 +97,10 @@ class MMapIndexedDatasetBuilder(object):
 builder = MMapIndexedDatasetBuilder(f"{OUT_NAME}.bin")
 cnt = 0
 max_size = 0
+data_length = 0
 for line in shuffled_lines:
     raw = json.loads(line)["text"]
+    data_length += 1
     if len(raw) > max_size:
         max_size = len(raw)
     out = tokenizer.encode(raw)
@@ -101,7 +121,6 @@ print("### Verifying result...")
 data = MMapIndexedDataset(OUT_NAME)
 data_len = len(data)
 data_size = len(data._bin_buffer) // data._index._dtype_size
-
 TODO = [0, data_len - 1]
 PREVIEW_LIMIT = 100
 for idx in TODO :
@@ -140,3 +159,6 @@ if CTX_LEN > 0 and data_size >= CTX_LEN * 3:
                 break
             
 print(f"### max_length = {max_size}")
+# 附近5个数字的前十个个因子
+print(f"### The first ten factors of the five numbers nearby (±5):")
+pretty_print_dict_factors(find_factors_range(data_length, 5))
