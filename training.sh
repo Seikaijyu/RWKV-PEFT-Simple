@@ -28,8 +28,12 @@ EPOCH_COUNT=20
 # 应该根据训练数据的条数和微批次大小调整，公式为：数据集条数/微批次大小=回合步数
 EPOCH_STEPS=265
 # 上下文长度
-# 建议找到数据集中最长的数据，然后根据数据集的最大长度调整上下文长度以节省资源
+# 使用./make_tokenize.sh {数据集名称}.jsonl {训练回合数}脚本进行数据分词时能得到如：### max_length = 208 这样的输出
+# 其中208就是数据中最长的数据的长度，在pad模式和only模式中，应该填入此数值以保证数据能够完全被训练
 # 如果数据过长无法训练，建议降低上下文长度并使用get模式读取数据，可以节省资源
+# 使用./make_tokenize.sh {数据集名称}.jsonl {训练回合数} {训练使用的上下文长度}
+# 生成数据集时，会输出的如### magic_prime = 149 (for ctxlen 4096)的magic_prime
+# 其中149为magic_prime，应该MAGIC_PRIME参数，而4096则应该填入此处
 CTX_LEN=222
 # 精度，可选值为：fp32, bf16, fp16，通常建议使用bf16，节省显存同时保证了训练精度
 PRECISION=bf16
@@ -70,7 +74,7 @@ GRAD_CP=1
 DATALOAD="pad"
 # 魔术质数，用费马小定理保证数据集的每一个chunk在数据读取模式为get模式下被正好“随机地”采样1次。
 # 仅应该在使用DATALOAD="get"时添加
-# 在使用make_tokenize.py {数据集名称}.jsonl {训练回合数} {训练使用的上下文长度}
+# 在使用./make_tokenize.sh {数据集名称}.jsonl {训练回合数} {训练使用的上下文长度}
 # 生成数据集时，会输出的如### magic_prime = 149 (for ctxlen 4096)的magic_prime
 # 其中149为magic_prime，并填入此处，其中的4096则应该填入CTX_LEN
 MAGIC_PRIME=0
