@@ -57,7 +57,18 @@ try:
 except:
     pass
 with open(IN_FILE, "r", encoding="utf-8") as file:
-    non_empty_lines = [line.strip() for line in file if line.strip()]
+    non_empty_lines = []
+    count = 0
+    for line in file:
+        count += 1
+        stripped_line = line.strip()
+        if stripped_line:
+            try:
+                json.loads(stripped_line)
+            except:
+                print(f"Error in line {count}: {stripped_line}")
+                sys.exit(0)
+            non_empty_lines.append(stripped_line)
 
 # 在内存中重复并洗牌，避免重复写入和读取文件
 shuffled_lines = []

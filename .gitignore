@@ -12,7 +12,7 @@ merge_pissa.*
 !/model/.gitkeep
 !/output/.gitkeep
 /小渝
-
+filter.exe
 train.py
 
 merge.py
