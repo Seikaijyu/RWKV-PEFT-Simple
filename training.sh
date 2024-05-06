@@ -68,6 +68,12 @@ GRAD_CP=1
 # pad: 从数据最开始到结束进行训练，如果数据长度小于上下文长度，则填充上下文，适用于微批次大小大于1的配置，建议使用此配置时根据最长数据调整上下文长度
 # only: 从数据最开始到结束进行训练，即使数据集长度超过上下文长度，也会从最开始截取到上下文长度的数据进行训练，适用于微批次大小为1的配置，建议使用此配置时根据最长数据调整上下文长度
 DATALOAD="pad"
+# 魔术质数，用费马小定理保证数据集的每一个chunk在数据读取模式为get模式下被正好“随机地”采样1次。
+# 仅应该在使用DATALOAD="get"时添加
+# 在使用make_tokenize.py {数据集名称}.jsonl {训练回合数} {训练使用的上下文长度}
+# 生成数据集时，会输出的如### magic_prime = 149 (for ctxlen 4096)的magic_prime
+# 其中149为magic_prime，并填入此处，其中的4096则应该填入CTX_LEN
+MAGIC_PRIME=0
 # ------------------不常用训练参数----------------------
 # 开始训练的回合，可以用来恢复训练
 EPOCH_BEGIN=0
@@ -242,7 +248,7 @@ if [ "$FINETUNE_MODE" = "lora" ]; then
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
     --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD\
     --lora_load $lora_load --lora --lora_r $lora_r --lora_alpha $lora_alpha \
-    --lora_dropout $lora_dropout --lora_parts=$lora_parts $V6_TRAIN $EMB
+    --lora_dropout $lora_dropout --lora_parts=$lora_parts --magic_prime $MAGIC_PRIME $V6_TRAIN $EMB
 else if [ "$FINETUNE_MODE" = "lisa" ]; then
    python3 train.py --load_model model/$MODEL_PATH \
     --proj_dir output --data_file data/$DATA_PATH \
@@ -252,7 +258,7 @@ else if [ "$FINETUNE_MODE" = "lisa" ]; then
     --pre_ffn $PRE_FFN --head_qk $HEAD_QK --lr_init $LR_INIT --lr_final $LR_FINAL --warmup_steps $WARMUP_STEPS --beta1 $BETA1 --beta2 $BETA2 --adam_eps $ADAM_EPS \
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
     --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD \
-    --LISA --lisa_r $lisa_r --lisa_k $lisa_k $V6_TRAIN $EMB
+    --LISA --lisa_r $lisa_r --lisa_k $lisa_k --magic_prime $MAGIC_PRIME $V6_TRAIN $EMB
 else if [ "$FINETUNE_MODE" = "pissa" ]; then
    python3 train.py --load_model model/$MODEL_PATH \
     --proj_dir output --data_file data/$DATA_PATH \
@@ -263,7 +269,7 @@ else if [ "$FINETUNE_MODE" = "pissa" ]; then
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
     --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD \
     --lora_load $lora_load --lora --lora_r $lora_r --lora_alpha $lora_alpha --lora_dropout $lora_dropout --lora_parts=$lora_parts \
-    --PISSA --svd_niter $svd_niter $V6_TRAIN $EMB
+    --PISSA --svd_niter $svd_niter --magic_prime $MAGIC_PRIME $V6_TRAIN $EMB
 else if [ "$FINETUNE_MODE" = "state" ]; then
    python3 train.py --load_model model/$MODEL_PATH \
     --proj_dir output --data_file data/$DATA_PATH \
@@ -273,7 +279,7 @@ else if [ "$FINETUNE_MODE" = "state" ]; then
     --pre_ffn $PRE_FFN --head_qk $HEAD_QK --lr_init $LR_INIT --lr_final $LR_FINAL --warmup_steps $WARMUP_STEPS --beta1 $BETA1 --beta2 $BETA2 --adam_eps $ADAM_EPS \
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
     --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD \
-    --state_tune $V6_TRAIN
+    --state_tune --magic_prime $MAGIC_PRIME $V6_TRAIN
 else
     echo "!!!!!!!!!!!!!不支持的微调模式$FINETUNE_MODE，仅支持lora, pissa, lisa!!!!!!!!!!!!!"
     exit 1
