@@ -3,6 +3,7 @@
 **此项目是为[RWKV-PEFT](https://github.com/JL-er/RWKV-PEFT)提供的快捷微调包**
 
 **注意：本项目默认你有一定的动手和学习能力**
+
 #### 1. 准备工作（linux和windows通用）
 * 进入以上RWKV-PEFT的github链接下载RWKV-PEFT包，此时应该能得到名为`RWKV-PEFT-main.zip`的压缩包
 * 将压缩包中的`RWKV-PEFT-main`文件夹解压到本地
@@ -27,7 +28,7 @@
 #### 6. 运行测试
 * 此时你已经完成了微调的所有步骤，现在只需要找到`/merge`文件夹内合并好的模型文件，放到[RWKV-Runner](https://github.com/josStorer/RWKV-Runner)或者[Ai00](https://github.com/Ai00-X/ai00_server)等RWKV推理项目中运行测试即可（这里我推荐RWKV-Runner）
 * 测试时推荐多调整`Temperature`，`Top_P`，`Presence Penalty`，`Frequency Penalty`参数进行测试
-
+## 如果在读完后依然不理解如何使用，建议查看`training.sh`文件和`merge.sh`文件中的注释，能让你更快上手，也开业使用GPT阅读并询问GPT，弄清不理解的部分
 ### 祝您能成功调出自己喜欢的模型~
 
 ###### by Seikaijyu
