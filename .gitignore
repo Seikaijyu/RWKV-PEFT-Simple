@@ -8,6 +8,9 @@ merge_pissa.*
 /merge/*
 /model/*
 /output/*
+!/merge/.gitkeep
+!/model/.gitkeep
+!/output/.gitkeep
 /小渝
 
 train.py
