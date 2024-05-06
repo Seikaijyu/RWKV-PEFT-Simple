@@ -17,8 +17,8 @@
 * 你可以根据自己想法做一些遵循此格式的训练数据，或者去国外的[huggingface](https://huggingface.co/)找一些公开的开源数据，国内也有类似的网站，比如[modelscope](https://modelscope.cn/)也可以找到一些开源数据
 * 所有数据都应该放入`/data`目录中
 #### 3. 数据分词
-* 现在你得到了数据，进入之前在文件夹打开的ubuntu终端中，使用以下格式`./make_tokenize.sh {data目录中的文件名称，包括.jsonl} {训练的回合数}`进行数据分词。
-* 如果你希望使用`get`模式读取数据，则应该使用`./make_tokenize.sh {data目录中的文件名称，包括.jsonl} {训练的回合数} {训练的上下文长度}`进行数据分词，并且你应该能得到如`magic_prime = 149 (for ctxlen 4096)`这样的输出，其中的`149`就是你得到的`MAGIC_PRIME`参数，现在将它写入`training.sh`的`MAGIC_PRIME`参数中，并将`DATALOAD`修改为`get`即可
+* 现在你得到了数据，进入之前在文件夹打开的ubuntu终端中，使用以下格式`./make_tokenize.sh {data目录中的文件名称，包括.jsonl} {训练的回合数}`进行数据分词
+* 如果你希望使用`get`模式读取数据，则应该使用`./make_tokenize.sh {data目录中的文件名称，包括.jsonl} {训练的回合数} {训练的上下文长度}`进行数据分词，并且你应该能得到如`magic_prime = 149 (for ctxlen 4096)`这样的输出，其中的`149`就是你得到的`MAGIC_PRIME`参数，而`4096`则是你输入的上下文长度，现在将它写入`training.sh`的`MAGIC_PRIME`参数中，并将`DATALOAD`修改为`get`，`CTX_LEN`也修改为你输入的上下文长度即可
 * 因为是示例，现在你可以输入`./make_tokenize.sh sample.jsonl 4`或者`./make_tokenize.sh sample.jsonl 4 512` 进行分词测试
 #### 4. 调整参数
 * 你已经完成了数据分词，现在使用文本编辑器（vscode或者其他文本编辑器）打开当前目录下的`training.sh`文件，里面的所有参数设置已经使用数据标注好，你应该调整其中的参数进行训练准备，参数调整说明会在其他地方（可能是github wiki或者知乎）详细说明，这里就不再多提
