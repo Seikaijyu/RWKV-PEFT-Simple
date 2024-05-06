@@ -106,6 +106,7 @@ lora_parts=att,ffn,time,ln
 lora_load="rwkv-0"
 # LORA模型的r值
 # 越大的r值，微调的效果越好，同时也能让pissa微调的奇异值分解精度越高，但是显存占用越高，建议最大128
+# 如果显存或者RAM不足，应该调低此值，一般训练使用32或者64即可，实在不够也可以用16
 lora_r=96
 # LORA模型的alpha值
 # 此值应该配合r值调整
