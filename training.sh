@@ -32,10 +32,8 @@ EPOCH_STEPS=200
 # 使用./make_tokenize.sh {数据集名称}.jsonl {训练回合数}脚本进行数据分词时能得到如：### max_length = 208 这样的输出
 # 其中208就是数据中最长的数据的长度，在pad模式和only模式中，应该填入此数值以保证数据能够完全被训练
 # 如果数据过长无法训练，建议降低上下文长度并使用get模式读取数据，可以节省资源
-# 使用./make_tokenize.sh {数据集名称}.jsonl {训练回合数} {训练使用的上下文长度}
-# 生成数据集时，会输出的如### magic_prime = 149 (for ctxlen 4096)的magic_prime
-# 其中149为magic_prime，应该MAGIC_PRIME参数，而4096则应该填入此处
-CTX_LEN=1024
+# 使用./make_tokenize.sh {数据集名称}.jsonl 1 进行数据分词即可
+CTX_LEN=200
 # 精度，可选值为：fp32, bf16, fp16，通常建议使用bf16，节省显存同时保证了训练精度
 PRECISION=bf16
 # 如果使用state模式微调，lr最好调高，建议1，使用其它模式建议5e-5到1e-4之间，优先选择5e-5
@@ -59,7 +57,7 @@ EPOCH_SAVE=1
 # 前缀网络预处理
 PRE_FFN=1
 # 梯度累计，如果显存不够无法调整微批次大小，可以适当调高此值
-MINI_BSZ=1
+MINI_BSZ=8
 # 优化策略, 可选值为：deepspeed_stage_1, deepspeed_stage_2, deepspeed_stage_3
 # 建议使用deepspeed_stage_2节省显存的同时也能保证微调速度
 # deepspeed_stage_1: 完全使用显卡内存，不适用于显存较小的显卡，在显存足够的时候速度较快，使用量化微调时建议开启以加速训练
@@ -72,13 +70,8 @@ GRAD_CP=1
 # get: 从数据中随机截取一段基于上下文长度的数据进行训练，适用于数据集较大但是上下文长度无法调高的情况
 # pad: 从数据最开始到结束进行训练，如果数据长度小于上下文长度，则填充上下文，适用于微批次大小大于1的配置，建议使用此配置时根据最长数据调整上下文长度
 # only: 从数据最开始到结束进行训练，即使数据集长度超过上下文长度，也会从最开始截取到上下文长度的数据进行训练，适用于微批次大小为1的配置，建议使用此配置时根据最长数据调整上下文长度
+# 在上下文长度允许的情况下，更推荐使用pad（微批次大于1）或者only（微批次为1）模式，可以更好的学习到数据的连贯特征
 DATALOAD="pad"
-# 魔术质数，用费马小定理保证数据集的每一个chunk在数据读取模式为get模式下被正好“随机地”采样1次。
-# 仅应该在使用DATALOAD="get"时添加
-# 在使用./make_tokenize.sh {数据集名称}.jsonl {训练回合数} {训练使用的上下文长度}
-# 生成数据集时，会输出的如### magic_prime = 149 (for ctxlen 4096)的magic_prime
-# 其中149为magic_prime，并填入此处，其中的4096则应该填入CTX_LEN
-MAGIC_PRIME=0
 # ------------------不常用训练参数----------------------
 # 开始训练的回合，可以用来恢复训练
 EPOCH_BEGIN=0
@@ -108,18 +101,18 @@ lora_load="rwkv-0"
 # LORA模型的r值
 # 越大的r值，微调的效果越好，同时也能让pissa微调的奇异值分解精度越高，但是显存占用越高，建议最大128
 # 如果显存或者RAM不足，应该调低此值，一般训练使用32或者64即可，实在不够也可以用16
-lora_r=32
+lora_r=96
 # LORA模型的alpha值
 # 此值应该配合r值调整
 # 计算公式为：lora_alpha=lora_r*2
-lora_alpha=64
+lora_alpha=192
 # LORA模型的dropout值 
 lora_dropout=0.01
 # pissa的快速奇异值分解的迭代次数，迭代次数越高损失越低，但是初始化的速度就越慢
 # 如果需要速度，可以适当调低此值，但是损失会增加
 # 一般来说svd_niter=16后就已经非常接近奇异值分解的结果了，往后的迭代次数对结果影响不会很大
 # 此外，lora_r对于svd_niter的影响也很大，lora_r越大，训练损失越低，但是svd_niter也需要相应增加
-svd_niter=16
+svd_niter=4
 
 # ------------------lisa设置参数----------------------
 # LISA模型的r值，代表采样的层数
@@ -254,7 +247,7 @@ if [ "$FINETUNE_MODE" = "lora" ]; then
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
     --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD\
     --lora_load $lora_load --lora --lora_r $lora_r --lora_alpha $lora_alpha \
-    --lora_dropout $lora_dropout --lora_parts=$lora_parts --magic_prime $MAGIC_PRIME $V6_TRAIN $EMB
+    --lora_dropout $lora_dropout --lora_parts=$lora_parts --my_pile_stage $MY_PILE_STAGE  $V6_TRAIN $EMB
 else if [ "$FINETUNE_MODE" = "lisa" ]; then
    python3 train.py --load_model model/$MODEL_PATH \
     --proj_dir output --data_file data/$DATA_PATH \
@@ -264,7 +257,7 @@ else if [ "$FINETUNE_MODE" = "lisa" ]; then
     --pre_ffn $PRE_FFN --head_qk $HEAD_QK --lr_init $LR_INIT --lr_final $LR_FINAL --warmup_steps $WARMUP_STEPS --beta1 $BETA1 --beta2 $BETA2 --adam_eps $ADAM_EPS \
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
     --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD \
-    --LISA --lisa_r $lisa_r --lisa_k $lisa_k --magic_prime $MAGIC_PRIME $V6_TRAIN $EMB
+    --LISA --lisa_r $lisa_r --lisa_k $lisa_k --my_pile_stage $MY_PILE_STAGE $V6_TRAIN $EMB
 else if [ "$FINETUNE_MODE" = "pissa" ]; then
    python3 train.py --load_model model/$MODEL_PATH \
     --proj_dir output --data_file data/$DATA_PATH \
@@ -275,7 +268,7 @@ else if [ "$FINETUNE_MODE" = "pissa" ]; then
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
     --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD \
     --lora_load $lora_load --lora --lora_r $lora_r --lora_alpha $lora_alpha --lora_dropout $lora_dropout --lora_parts=$lora_parts \
-    --PISSA --svd_niter $svd_niter --magic_prime $MAGIC_PRIME $V6_TRAIN $EMB
+    --PISSA --svd_niter $svd_niter --my_pile_stage $MY_PILE_STAGE $V6_TRAIN $EMB
 else if [ "$FINETUNE_MODE" = "state" ]; then
    python3 train.py --load_model model/$MODEL_PATH \
     --proj_dir output --data_file data/$DATA_PATH \
@@ -285,7 +278,7 @@ else if [ "$FINETUNE_MODE" = "state" ]; then
     --pre_ffn $PRE_FFN --head_qk $HEAD_QK --lr_init $LR_INIT --lr_final $LR_FINAL --warmup_steps $WARMUP_STEPS --beta1 $BETA1 --beta2 $BETA2 --adam_eps $ADAM_EPS \
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
     --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD \
-    --state_tune --magic_prime $MAGIC_PRIME $V6_TRAIN
+    --state_tune --my_pile_stage $MY_PILE_STAGE $V6_TRAIN
 else
     echo "!!!!!!!!!!!!!不支持的微调模式$FINETUNE_MODE，仅支持lora, pissa, lisa!!!!!!!!!!!!!"
     exit 1
