@@ -18,22 +18,22 @@ QUANT="none"
 EMB_FINETUNE=0
 # 模型路径
 # 对应的是在model文件夹下需要微调的模型的文件名
-MODEL_PATH=model.pth
+MODEL_PATH=RWKV-x060-World-3B-v2.1-20240417-ctx4096.pth
 # 数据路径
 # 对应的是在data文件夹下需要微调的使用数据的文件名
-DATA_PATH=dataname
+DATA_PATH=xuexue-new-cleaned
 # 训练的回合数，达到回合数后会停止训练
 # 仅在数据读取模式为pad和only时生效
-EPOCH_COUNT=20
+EPOCH_COUNT=5
 # 回合步数
 # 应该根据训练数据的条数和微批次大小调整，公式为：数据集条数/微批次大小=回合步数
-EPOCH_STEPS=200
+EPOCH_STEPS=236
 # 上下文长度
 # 使用./make_tokenize.sh {数据集名称}.jsonl {训练回合数}脚本进行数据分词时能得到如：### max_length = 208 这样的输出
 # 其中208就是数据中最长的数据的长度，在pad模式和only模式中，应该填入此数值以保证数据能够完全被训练
 # 如果数据过长无法训练，建议降低上下文长度并使用get模式读取数据，可以节省资源
 # 使用./make_tokenize.sh {数据集名称}.jsonl 1 进行数据分词即可
-CTX_LEN=200
+CTX_LEN=798
 # 精度，可选值为：fp32, bf16, fp16，通常建议使用bf16，节省显存同时保证了训练精度
 PRECISION=bf16
 # 如果使用state模式微调，lr最好调高，建议1，使用其它模式建议5e-5到1e-4之间，优先选择5e-5
@@ -51,7 +51,7 @@ GPU_COUNT=1
 # 微批次大小，此配置项越大，显存占用越大，但是训练速度越快
 # 此配置项非1时应该跟随数据集条数调整，公式为：数据集条数/微批次大小=回合步数
 # 例如：数据集条数为10000，微批次大小为10，回合步数应该设置为1000
-MICRO_BSZ=2
+MICRO_BSZ=4
 # 模型保存间隔，每隔多少回合保存一次模型
 EPOCH_SAVE=1
 # 前缀网络预处理
@@ -247,7 +247,7 @@ if [ "$FINETUNE_MODE" = "lora" ]; then
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
     --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD\
     --lora_load $lora_load --lora --lora_r $lora_r --lora_alpha $lora_alpha \
-    --lora_dropout $lora_dropout --lora_parts=$lora_parts --my_pile_stage $MY_PILE_STAGE  $V6_TRAIN $EMB
+    --lora_dropout $lora_dropout --lora_parts=$lora_parts  $V6_TRAIN $EMB
 else if [ "$FINETUNE_MODE" = "lisa" ]; then
    python3 train.py --load_model model/$MODEL_PATH \
     --proj_dir output --data_file data/$DATA_PATH \
@@ -257,7 +257,7 @@ else if [ "$FINETUNE_MODE" = "lisa" ]; then
     --pre_ffn $PRE_FFN --head_qk $HEAD_QK --lr_init $LR_INIT --lr_final $LR_FINAL --warmup_steps $WARMUP_STEPS --beta1 $BETA1 --beta2 $BETA2 --adam_eps $ADAM_EPS \
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
     --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD \
-    --LISA --lisa_r $lisa_r --lisa_k $lisa_k --my_pile_stage $MY_PILE_STAGE $V6_TRAIN $EMB
+    --LISA --lisa_r $lisa_r --lisa_k $lisa_k $V6_TRAIN $EMB
 else if [ "$FINETUNE_MODE" = "pissa" ]; then
    python3 train.py --load_model model/$MODEL_PATH \
     --proj_dir output --data_file data/$DATA_PATH \
@@ -268,7 +268,7 @@ else if [ "$FINETUNE_MODE" = "pissa" ]; then
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
     --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD \
     --lora_load $lora_load --lora --lora_r $lora_r --lora_alpha $lora_alpha --lora_dropout $lora_dropout --lora_parts=$lora_parts \
-    --PISSA --svd_niter $svd_niter --my_pile_stage $MY_PILE_STAGE $V6_TRAIN $EMB
+    --PISSA --svd_niter $svd_niter $V6_TRAIN $EMB
 else if [ "$FINETUNE_MODE" = "state" ]; then
    python3 train.py --load_model model/$MODEL_PATH \
     --proj_dir output --data_file data/$DATA_PATH \
@@ -278,7 +278,7 @@ else if [ "$FINETUNE_MODE" = "state" ]; then
     --pre_ffn $PRE_FFN --head_qk $HEAD_QK --lr_init $LR_INIT --lr_final $LR_FINAL --warmup_steps $WARMUP_STEPS --beta1 $BETA1 --beta2 $BETA2 --adam_eps $ADAM_EPS \
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
     --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD \
-    --state_tune --my_pile_stage $MY_PILE_STAGE $V6_TRAIN
+    --state_tune $V6_TRAIN
 else
     echo "!!!!!!!!!!!!!不支持的微调模式$FINETUNE_MODE，仅支持lora, pissa, lisa!!!!!!!!!!!!!"
     exit 1
