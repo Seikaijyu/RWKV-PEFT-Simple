@@ -19,7 +19,7 @@ if [ ! -f "${BASE_NAME}.bin" ]; then
 fi
 # 移动生成的文件到目标目录
 mv ${BASE_NAME}.bin ${TARGET_DIR}
-if [ -f "${BASE_NAME}.idx" ]; then
+if [ ! -f "${BASE_NAME}.idx" ]; then
     exit 1
 fi
 mv ${BASE_NAME}.idx ${TARGET_DIR}
