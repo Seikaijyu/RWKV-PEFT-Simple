@@ -21,19 +21,19 @@ EMB_FINETUNE=0
 MODEL_PATH=RWKV-x060-World-3B-v2.1-20240417-ctx4096.pth
 # 数据路径
 # 对应的是在data文件夹下需要微调的使用数据的文件名
-DATA_PATH=xuexue-new-cleaned
+DATA_PATH=roleplay-diversification
 # 训练的回合数，达到回合数后会停止训练
 # 仅在数据读取模式为pad和only时生效
-EPOCH_COUNT=5
+EPOCH_COUNT=20
 # 回合步数
 # 应该根据训练数据的条数和微批次大小调整，公式为：数据集条数/微批次大小=回合步数
-EPOCH_STEPS=236
+EPOCH_STEPS=1255
 # 上下文长度
 # 使用./make_tokenize.sh {数据集名称}.jsonl {训练回合数}脚本进行数据分词时能得到如：### max_length = 208 这样的输出
 # 其中208就是数据中最长的数据的长度，在pad模式和only模式中，应该填入此数值以保证数据能够完全被训练
 # 如果数据过长无法训练，建议降低上下文长度并使用get模式读取数据，可以节省资源
 # 使用./make_tokenize.sh {数据集名称}.jsonl 1 进行数据分词即可
-CTX_LEN=798
+CTX_LEN=1214
 # 精度，可选值为：fp32, bf16, fp16，通常建议使用bf16，节省显存同时保证了训练精度
 PRECISION=bf16
 # 如果使用state模式微调，lr最好调高，建议1，使用其它模式建议5e-5到1e-4之间，优先选择5e-5
@@ -51,11 +51,9 @@ GPU_COUNT=1
 # 微批次大小，此配置项越大，显存占用越大，但是训练速度越快
 # 此配置项非1时应该跟随数据集条数调整，公式为：数据集条数/微批次大小=回合步数
 # 例如：数据集条数为10000，微批次大小为10，回合步数应该设置为1000
-MICRO_BSZ=4
+MICRO_BSZ=3
 # 模型保存间隔，每隔多少回合保存一次模型
 EPOCH_SAVE=1
-# 前缀网络预处理
-PRE_FFN=1
 # 梯度累计，如果显存不够无法调整微批次大小，可以适当调高此值
 MINI_BSZ=8
 # 优化策略, 可选值为：deepspeed_stage_1, deepspeed_stage_2, deepspeed_stage_3
@@ -112,7 +110,7 @@ lora_dropout=0.01
 # 如果需要速度，可以适当调低此值，但是损失会增加
 # 一般来说svd_niter=16后就已经非常接近奇异值分解的结果了，往后的迭代次数对结果影响不会很大
 # 此外，lora_r对于svd_niter的影响也很大，lora_r越大，训练损失越低，但是svd_niter也需要相应增加
-svd_niter=4
+svd_niter=96
 
 # ------------------lisa设置参数----------------------
 # LISA模型的r值，代表采样的层数
@@ -243,7 +241,7 @@ if [ "$FINETUNE_MODE" = "lora" ]; then
     --data_type binidx --vocab_size $VOCAB_SIZE \
     --ctx_len $CTX_LEN --epoch_steps $EPOCH_STEPS --epoch_count $EPOCH_COUNT --epoch_begin $EPOCH_BEGIN --epoch_save $EPOCH_SAVE --micro_bsz $MICRO_BSZ \
     --n_layer $N_LAYER --n_embd $EMBD_SIZE \
-    --pre_ffn $PRE_FFN --head_qk $HEAD_QK --lr_init $LR_INIT --lr_final $LR_FINAL --warmup_steps $WARMUP_STEPS --beta1 $BETA1 --beta2 $BETA2 --adam_eps 1e-8 \
+    --head_qk $HEAD_QK --lr_init $LR_INIT --lr_final $LR_FINAL --warmup_steps $WARMUP_STEPS --beta1 $BETA1 --beta2 $BETA2 --adam_eps 1e-8 \
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
     --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD\
     --lora_load $lora_load --lora --lora_r $lora_r --lora_alpha $lora_alpha \
@@ -254,7 +252,7 @@ else if [ "$FINETUNE_MODE" = "lisa" ]; then
     --data_type binidx --vocab_size $VOCAB_SIZE \
     --ctx_len $CTX_LEN --epoch_steps $EPOCH_STEPS --epoch_count $EPOCH_COUNT --epoch_begin $EPOCH_BEGIN --epoch_save $EPOCH_SAVE --micro_bsz $MICRO_BSZ \
     --n_layer $N_LAYER --n_embd $EMBD_SIZE \
-    --pre_ffn $PRE_FFN --head_qk $HEAD_QK --lr_init $LR_INIT --lr_final $LR_FINAL --warmup_steps $WARMUP_STEPS --beta1 $BETA1 --beta2 $BETA2 --adam_eps $ADAM_EPS \
+    --head_qk $HEAD_QK --lr_init $LR_INIT --lr_final $LR_FINAL --warmup_steps $WARMUP_STEPS --beta1 $BETA1 --beta2 $BETA2 --adam_eps $ADAM_EPS \
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
     --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD \
     --LISA --lisa_r $lisa_r --lisa_k $lisa_k $V6_TRAIN $EMB
@@ -264,7 +262,7 @@ else if [ "$FINETUNE_MODE" = "pissa" ]; then
     --data_type binidx --vocab_size $VOCAB_SIZE \
     --ctx_len $CTX_LEN --epoch_steps $EPOCH_STEPS --epoch_count $EPOCH_COUNT --epoch_begin $EPOCH_BEGIN --epoch_save $EPOCH_SAVE --micro_bsz $MICRO_BSZ \
     --n_layer $N_LAYER --n_embd $EMBD_SIZE \
-    --pre_ffn $PRE_FFN --head_qk $HEAD_QK --lr_init $LR_INIT --lr_final $LR_FINAL --warmup_steps $WARMUP_STEPS --beta1 $BETA1 --beta2 $BETA2 --adam_eps $ADAM_EPS \
+    --head_qk $HEAD_QK --lr_init $LR_INIT --lr_final $LR_FINAL --warmup_steps $WARMUP_STEPS --beta1 $BETA1 --beta2 $BETA2 --adam_eps $ADAM_EPS \
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
     --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD \
     --lora_load $lora_load --lora --lora_r $lora_r --lora_alpha $lora_alpha --lora_dropout $lora_dropout --lora_parts=$lora_parts \
@@ -275,7 +273,7 @@ else if [ "$FINETUNE_MODE" = "state" ]; then
     --data_type binidx --vocab_size $VOCAB_SIZE \
     --ctx_len $CTX_LEN --epoch_steps $EPOCH_STEPS --epoch_count $EPOCH_COUNT --epoch_begin $EPOCH_BEGIN --epoch_save $EPOCH_SAVE --micro_bsz $MICRO_BSZ \
     --n_layer $N_LAYER --n_embd $EMBD_SIZE \
-    --pre_ffn $PRE_FFN --head_qk $HEAD_QK --lr_init $LR_INIT --lr_final $LR_FINAL --warmup_steps $WARMUP_STEPS --beta1 $BETA1 --beta2 $BETA2 --adam_eps $ADAM_EPS \
+    --head_qk $HEAD_QK --lr_init $LR_INIT --lr_final $LR_FINAL --warmup_steps $WARMUP_STEPS --beta1 $BETA1 --beta2 $BETA2 --adam_eps $ADAM_EPS \
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
     --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD \
     --state_tune $V6_TRAIN
