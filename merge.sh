@@ -1,7 +1,7 @@
 # 模型路径
 MODEL_PATH=RWKV-x060-World-3B-v2.1-20240417-ctx4096.pth
 # 训练回合数，由命令行传入，具体微调回复数可以查看output目录下的文件，例如：rwkv-7.pth表示微调7回合后的模型
-# 使用方式：./training.sh {微调的回合数量}
+# 使用方式：./merge.sh {微调的回合数量}
 PISSA_EPOCH=$1
 # 训练使用的量化精度，可用参数为：none,4bit,nf4,fp4
 QUANT="none"
