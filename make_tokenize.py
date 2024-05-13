@@ -67,6 +67,7 @@ with open(IN_FILE, "r", encoding="utf-8") as file:
                 json.loads(stripped_line)
             except:
                 print(f"Error in line {count}: {stripped_line}")
+                print(f"Please check your jsonl file. (Failed at line {count})")
                 sys.exit(0)
             non_empty_lines.append(stripped_line)
 
