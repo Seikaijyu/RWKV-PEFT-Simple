@@ -87,12 +87,12 @@ case "$TRAIN_TYPE" in
 esac
 
 if [ "$TRAIN_TYPE" = "state" ]; then
-    python3 merge_state.py \
+    python3 merge/merge_state.py \
         --base_model model/$MODEL_PATH \
         --state_checkpoint output/rwkv-$PISSA_EPOCH.pth \
         --output merge/$FILE_NAME-$OUT_TYPE-$PISSA_EPOCH.pth
 else
-    python3 merge.py \
+    python3 merge/merge.py \
         --quant $QUANT \
         --lora_alpha $LORA_ALPHA \
         --type $TRAIN_TYPE \
