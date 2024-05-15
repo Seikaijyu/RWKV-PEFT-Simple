@@ -90,7 +90,7 @@ if [ "$TRAIN_TYPE" = "state" ]; then
     python3 merge/merge_state.py \
         --base_model model/$MODEL_PATH \
         --state_checkpoint output/rwkv-$PISSA_EPOCH.pth \
-        --output merge/$FILE_NAME-$OUT_TYPE-$PISSA_EPOCH.pth
+        --output merge_model/$FILE_NAME-$OUT_TYPE-$PISSA_EPOCH.pth
 else
     python3 merge/merge.py \
         --quant $QUANT \
@@ -99,5 +99,5 @@ else
         --base_model model/$MODEL_PATH \
         --lora_init output/init_lora.pth \
         --lora_checkpoint output/rwkv-$PISSA_EPOCH.pth \
-        --output merge/$FILE_NAME-$OUT_TYPE-$PISSA_EPOCH.pth
+        --output merge_model/$FILE_NAME-$OUT_TYPE-$PISSA_EPOCH.pth
 fi

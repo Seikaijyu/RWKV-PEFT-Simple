@@ -22,3 +22,6 @@ __pycache__
 !/data/sample.jsonl
 
 merge_state.py
+/merge
+/merge_model
+!/merge_model/.gitkeep
