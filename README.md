@@ -5,7 +5,7 @@
 **注意：本项目默认你有一定的动手和学习能力**
 
 #### 1. 准备工作（linux和windows通用）
-* 进入此仓库[RWKV-PEFT](https://github.com/Seikaijyu/RWKV-PEFT)下载RWKV-PEFT包，此时应该能得到名为`RWKV-PEFT-main.zip`的压缩包
+* 进入[此仓库](https://github.com/Seikaijyu/RWKV-PEFT)下载RWKV-PEFT包，此时应该能得到名为`RWKV-PEFT-main.zip`的压缩包
 * 将压缩包中的`RWKV-PEFT-main`文件夹解压到本地
 * 下载本项目包，此时应该能得到名为`RWKV-PEFT-Simple-main.zip`的压缩包
 * 双击进入`RWKV-PEFT-Simple-main.zip`压缩包，并进入压缩包内的`RWKV-PEFT-Simple-main`文件夹，使用鼠标拖动或者`ctrl+a`全选文件，拖动到`RWKV-PEFT-main`文件夹内
