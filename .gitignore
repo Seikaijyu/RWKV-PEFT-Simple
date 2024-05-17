@@ -25,3 +25,5 @@ merge_state.py
 /merge
 /merge_model
 !/merge_model/.gitkeep
+/fla
+requirements.txt
