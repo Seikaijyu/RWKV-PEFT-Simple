@@ -42,9 +42,9 @@ def find_factors_range(n, range_):
 def pretty_print_dict_factors(d):
     for key, value in d.items():
         value_array = np.array(value)
-        max_len = max(len("MICRO_BSZ or MINI_BSZ"), len("EPOCH_STEPS"))
+        max_len = max(len("MICRO_BSZ"), len("EPOCH_STEPS"))
         print(f"\n{key}")
-        print(f"{'MINI_BSZ'.ljust(max_len)} = {value}")
+        print(f"{'MICRO_BSZ'.ljust(max_len)} = {value}")
         print(f"{'EPOCH_STEPS'.ljust(max_len)} = {list(key // value_array)}")
 # 减少文件读写，直接在内存中处理数据
 N_EPOCH = int(sys.argv[2].strip())
