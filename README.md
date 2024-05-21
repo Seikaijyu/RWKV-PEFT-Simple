@@ -3,16 +3,16 @@
 **此项目是为[JL-er](https://github.com/JL-er)的RWKV-PEFT项目提供的快捷微调包**
 
 **注意：本项目默认你有一定的动手和学习能力**
-
 #### 1. 准备工作（linux和windows通用）
-* 进入[此仓库](https://github.com/Seikaijyu/RWKV-PEFT)下载RWKV-PEFT包，此时应该能得到名为`RWKV-PEFT-main.zip`的压缩包
+* 此项目依赖于`RWKV-PEFT`仓库，必须下载后并覆盖到根目录，也就是`RWKV-PEFT-Simple`解压目录一起使用，建议跟随此步骤一步一步学习
+* 首先进入依赖项目[RWKV-PEFT](https://github.com/Seikaijyu/RWKV-PEFT)下载RWKV-PEFT包，此时应该能得到名为`RWKV-PEFT-main.zip`的压缩包
 * 将压缩包中的`RWKV-PEFT-main`文件夹解压到本地
 * 下载本项目包，此时应该能得到名为`RWKV-PEFT-Simple-main.zip`的压缩包
 * 双击进入`RWKV-PEFT-Simple-main.zip`压缩包，并进入压缩包内的`RWKV-PEFT-Simple-main`文件夹，使用鼠标拖动或者`ctrl+a`全选文件，拖动到`RWKV-PEFT-main`文件夹内
 * 安装`wsl2`以及`Ubuntu 22.04.3 LTS`，这里不说明安装方法，有需要可以搜索
 * 为Ubuntu系统中的python3解释器安装pip，这里不说明安装方法，有需要可以搜索
 * 完成后找到之前的`RWKV-PEFT-main`文件夹，进入后右键鼠标选择`在终端中打开`然后在打开的终端中输入`wsl`进入`Ubuntu 22.04.3 LTS`系统
-* 现在为Python安装必要的环境，默认Python在Ubuntu下应该为`python3`，并且如果你正确执行以上步骤，你应该能在根目录下找到`requirements.txt`文件，现在在此文件夹根目录使用以上步骤提供的方法打开Ubuntu终端，执行`pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple`即可安装环境，安装环境耗时较长，请耐心等待。
+* 现在为Python安装必要的环境，默认Python在Ubuntu下应该为`python3`，并且如果你正确执行以上步骤，你应该能在根目录下找到`requirements.txt`文件，现在在此文件夹根目录使用以上步骤提供的方法打开Ubuntu终端，执行`pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple`即可安装环境，安装环境耗时较长，请耐心等待命令行停止输出
 #### 2. 准备数据
 * 你可以在`data/sample.jsonl`找到我提供的示例数据，训练数据的格式大致如此，你必须严格遵循格式才能进行训练
 * 你可以根据自己想法做一些遵循此格式的训练数据，或者去国外的[huggingface](https://huggingface.co/)找一些公开的开源数据，国内也有类似的网站，比如[modelscope](https://modelscope.cn/)也可以找到一些开源数据
