@@ -8,7 +8,8 @@ FINETUNE_MODE="pissa"
 # 微调附加类型，可选值为：none, state, infctx
 # state: 最新的实验性质微调，微调init state，微调速度更快，占用显存更低，但是暂时不够稳定，state微调暂时不作为微调附加类型
 # 开启后会覆盖微调方式设置，后续将允许作为附加类型使用，目前暂时未支持
-# infctx: 使用更长上下文微调时，不会导致显存使用量增加，开启时最好同时开启FLA以启用triton算子，因为cuda算子的梯度有点问题
+# infctx: infctx使用时间换内存进行训练，当显存不足但语料过长时建议开启
+# 开启后使用更长上下文微调时，不会导致显存使用量增加，开启时最好同时开启FLA以启用triton算子，因为cuda算子的梯度有点问题
 TRAIN_TYPE="none"
 # 训练的RWKV模型版本，可选值为：v5, v6
 MODEL_VERSION="v6"
@@ -28,19 +29,22 @@ FLA=0
 MODEL_PATH=RWKV-x060-World-3B-v2.1-20240417-ctx4096.pth
 # 数据路径
 # 对应的是在data文件夹下需要微调的使用数据的文件名
-DATA_PATH=设定-完整对话
+DATA_PATH=xuexue
 # 训练的回合数，达到回合数后会停止训练
 # 仅在数据读取模式为pad和only时生效
-EPOCH_COUNT=10
+EPOCH_COUNT=20
 # 回合步数
 # 应该根据训练数据的条数和微批次大小调整，公式为：数据集条数/微批次大小=回合步数
-EPOCH_STEPS=1260
+EPOCH_STEPS=3722
 # 上下文长度
 # 使用./make_tokenize.sh {数据集名称}.jsonl {训练回合数}脚本进行数据分词时能得到如：### max_length = 208 这样的输出
 # 其中208就是数据中最长的数据的长度，在pad模式和only模式中，应该填入此数值以保证数据能够完全被训练
 # 如果数据过长无法训练，建议降低上下文长度并使用get模式读取数据，可以节省资源
 # 使用./make_tokenize.sh {数据集名称}.jsonl 1 进行数据分词即可
-CTX_LEN=3477
+CTX_LEN=1388
+# 开启微调附加项的infctx参数后启用的设置，此设置用于确定在infctx中单次训练的上下文长度，此参数越高，消耗的显存越多
+# 相当于不开启infctx时的CTX_LEN参数，一般建议能开多大开多大（仅在infctx启用时有效）
+CHUNK_CTX=512
 # 精度，可选值为：fp32, bf16, fp16，通常建议使用bf16，节省显存同时保证了训练精度
 PRECISION=bf16
 # 如果使用state模式微调，lr最好调高，建议使用动态学习率，从1到0.01，使用其它模式建议5e-5到1e-4之间，优先选择5e-5
@@ -62,17 +66,21 @@ GPU_COUNT=1
 # 微批次大小，此配置项越大，显存占用越大，但是训练速度越快
 # 此配置项非1时应该跟随数据集条数调整，计算公式为：数据集条数/微批次大小=回合步数
 # 例如：数据集条数为10000，微批次大小为10，回合步数应该设置为1000
+# 微批次大小并不是越大越好，更大的微批次大小会导致学不到东西，建议根据数据集数量调整
+# 一般来说，数据集条数小于5k条时候，微批次大小建议最大为8，但是和梯度累计不同，微批次大小可以适当提高，视需求而定
 MICRO_BSZ=1
 # 模型保存间隔，每隔多少回合保存一次模型
 EPOCH_SAVE=1
-# 梯度累计，如果显存不够无法调整微批次大小，可以适当调高此值
+# 梯度累计，如果显存不够无法调整微批次大小
+# 建议基于以下公式设置参数：微批次大小x梯度累计 <= 8
+# 梯度累计并不是越大越好，更大的梯度累计会导致学不到东西，一般来说，数据集条数小于5k条时候，梯度累计建议最大为8
 MINI_BSZ=8
 # 优化策略, 可选值为：deepspeed_stage_1, deepspeed_stage_2, deepspeed_stage_3
 # 建议使用deepspeed_stage_2节省显存的同时也能保证微调速度
 # deepspeed_stage_1: 完全使用显卡内存，不适用于显存较小的显卡，在显存足够的时候速度较快，使用量化微调时建议开启以加速训练
 # deepspeed_stage_2: 使用显卡内存和RAM内存，适用于显存较小的显卡，能节省显存的同时保证速度
 # deepspeed_stage_3: 使用显卡内存和RAM内存，硬盘内存，适用于显存极小的显卡，速度最慢，除非RAM和显存都不足，否则不建议使用
-DEEPSPEED_STRATEGY=deepspeed_stage_2
+DEEPSPEED_STRATEGY=deepspeed_stage_1
 # 梯度复制，通常建议开启以节省显存
 GRAD_CP=1
 # 数据集获取，可选值为：get，pad，only
@@ -274,7 +282,7 @@ if [ "$TRAIN_TYPE" = "state" ]; then
     --n_layer $N_LAYER --n_embd $EMBD_SIZE \
     --lr_init $LR_INIT --lr_final $LR_FINAL --warmup_steps $WARMUP_STEPS --beta1 $BETA1 --beta2 $BETA2 --adam_eps $ADAM_EPS \
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
-    --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD \
+    --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD --chunk_ctx $CHUNK_CTX \
     --train_type $TRAIN_TYPE $V6_TRAIN $FLA
 else if [ "$FINETUNE_MODE" = "lora" ]; then
    python3 train.py --load_model model/$MODEL_PATH \
@@ -284,7 +292,7 @@ else if [ "$FINETUNE_MODE" = "lora" ]; then
     --n_layer $N_LAYER --n_embd $EMBD_SIZE \
     --lr_init $LR_INIT --lr_final $LR_FINAL --warmup_steps $WARMUP_STEPS --beta1 $BETA1 --beta2 $BETA2 --adam_eps 1e-8 \
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
-    --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD\
+    --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD --chunk_ctx $CHUNK_CTX \
     --lora_load $lora_load --lora --lora_r $lora_r --lora_alpha $lora_alpha \
     --lora_dropout $lora_dropout --lora_parts=$lora_parts $INFCTX $V6_TRAIN $EMB
 else if [ "$FINETUNE_MODE" = "lisa" ]; then
@@ -295,7 +303,7 @@ else if [ "$FINETUNE_MODE" = "lisa" ]; then
     --n_layer $N_LAYER --n_embd $EMBD_SIZE \
     --lr_init $LR_INIT --lr_final $LR_FINAL --warmup_steps $WARMUP_STEPS --beta1 $BETA1 --beta2 $BETA2 --adam_eps $ADAM_EPS \
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
-    --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD \
+    --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD --chunk_ctx $CHUNK_CTX \
     --LISA --lisa_r $lisa_r --lisa_k $lisa_k $INFCTX $V6_TRAIN $EMB $FLA
 else if [ "$FINETUNE_MODE" = "pissa" ]; then
    python3 train.py --load_model model/$MODEL_PATH \
@@ -305,7 +313,7 @@ else if [ "$FINETUNE_MODE" = "pissa" ]; then
     --n_layer $N_LAYER --n_embd $EMBD_SIZE \
     --lr_init $LR_INIT --lr_final $LR_FINAL --warmup_steps $WARMUP_STEPS --beta1 $BETA1 --beta2 $BETA2 --adam_eps $ADAM_EPS \
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
-    --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD \
+    --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD --chunk_ctx $CHUNK_CTX \
     --lora_load $lora_load --lora --lora_r $lora_r --lora_alpha $lora_alpha --lora_dropout $lora_dropout --lora_parts=$lora_parts \
     --PISSA --svd_niter $svd_niter $INFCTX $V6_TRAIN $EMB $FLA
 else
