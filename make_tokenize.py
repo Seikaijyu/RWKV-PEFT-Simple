@@ -173,4 +173,7 @@ if CTX_LEN > 0 and data_size >= CTX_LEN * 3:
 print(f"### max_length = {max_size}")
 # 附近5个数字的前十个个因子
 print(f"### The first ten factors of the five numbers nearby (±5):")
-pretty_print_dict_factors(find_factors_range(data_length//N_EPOCH, 5))
+try:
+    pretty_print_dict_factors(find_factors_range(data_length//N_EPOCH, 5))
+except:
+    pass
