@@ -185,7 +185,7 @@ if CTX_LEN > 0 and data_size >= CTX_LEN * 3:
             
 print(f"### max_length = {max_size}")
 print(f"### max_length_power_of_two = {next_power_of_two(max_size)}")
-print(f"### data_line_count = {data_length}")
+print(f"### data_line_count = {data_length//N_EPOCH}")
 # 附近5个数字的前十个个因子
 print(f"### The first ten factors of the five numbers nearby (±5):")
 try:
