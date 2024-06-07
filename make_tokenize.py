@@ -30,6 +30,17 @@ bb/aa/dd/cc/dd/aa/bb/cc/dd/bb/cc/aa/
 
 其中数据重复了3次 (每次都有不同的洗牌)
 """
+# 获取2的次幂
+def next_power_of_two(n):
+    if n < 1:
+        return 1
+    power = 1
+    while power < n:
+        power <<= 1
+    # 检查是否已经是2的次幂
+    if power == n:
+        return n
+    return power
 
 def find_factors_range(n, range_):
     def find_factors(n):
@@ -38,6 +49,8 @@ def find_factors_range(n, range_):
         return sorted(factors)[:10] if factors else [n]
 
     return {i: find_factors(i) for i in range(n - range_, n + range_ + 1)}
+
+
 # 输出字典
 def pretty_print_dict_factors(d):
     for key, value in d.items():
@@ -171,6 +184,8 @@ if CTX_LEN > 0 and data_size >= CTX_LEN * 3:
                 break
             
 print(f"### max_length = {max_size}")
+print(f"### max_length_power_of_two = {next_power_of_two(max_size)}")
+print(f"### data_line_count = {data_length}")
 # 附近5个数字的前十个个因子
 print(f"### The first ten factors of the five numbers nearby (±5):")
 try:
