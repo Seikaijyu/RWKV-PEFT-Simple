@@ -9,6 +9,7 @@ FINETUNE_MODE="pissa"
 # state: 最新的实验性质微调，微调init state，微调速度更快，占用显存更低，但是暂时不够稳定，state微调暂时不作为微调附加类型
 # 开启后会覆盖微调方式设置，后续将允许作为附加类型使用，目前暂时未支持
 # infctx: infctx使用时间换内存进行训练，当显存不足但语料过长时建议开启
+# 使用infctx时必须将DATALOAD修改为pad模式，否则会导致nan
 # 开启后使用更长上下文微调时，不会导致显存使用量增加，开启时最好同时开启FLA以启用triton算子，因为cuda算子的梯度有点问题
 TRAIN_TYPE="none"
 # 训练的RWKV模型版本，可选值为：v5, v6
@@ -22,29 +23,29 @@ QUANT="none"
 # 但是开启后会需要更多显存，同时会增加训练时间（仅在lora和pissa微调下有效）
 EMB_FINETUNE=0
 # 启用triton算子，可选值为：0（关闭）, 1（开启）
-# 开启后速度会慢一些，但是占用显存会少一点
+# MICRO_BSZ越小越推荐开启，训练速度更快
 FLA=0
 # 模型路径
 # 对应的是在model文件夹下需要微调的模型的文件名
 MODEL_PATH=RWKV-x060-World-3B-v2.1-20240417-ctx4096.pth
 # 数据路径
 # 对应的是在data文件夹下需要微调的使用数据的文件名
-DATA_PATH=xuexue
+DATA_PATH=train
 # 训练的回合数，达到回合数后会停止训练
 # 仅在数据读取模式为pad和only时生效
 EPOCH_COUNT=20
 # 回合步数
 # 应该根据训练数据的条数和微批次大小调整，公式为：数据集条数/微批次大小=回合步数
-EPOCH_STEPS=3722
+EPOCH_STEPS=1344
 # 上下文长度
 # 使用./make_tokenize.sh {数据集名称}.jsonl {训练回合数}脚本进行数据分词时能得到如：### max_length = 208 这样的输出
 # 其中208就是数据中最长的数据的长度，在pad模式和only模式中，应该填入此数值以保证数据能够完全被训练
 # 如果数据过长无法训练，建议降低上下文长度并使用get模式读取数据，可以节省资源
 # 使用./make_tokenize.sh {数据集名称}.jsonl 1 进行数据分词即可
-CTX_LEN=1388
+CTX_LEN=6604
 # 开启微调附加项的infctx参数后启用的设置，此设置用于确定在infctx中单次训练的上下文长度，此参数越高，消耗的显存越多
 # 相当于不开启infctx时的CTX_LEN参数，一般建议能开多大开多大（仅在infctx启用时有效）
-CHUNK_CTX=512
+CHUNK_CTX=2048
 # 精度，可选值为：fp32, bf16, fp16，通常建议使用bf16，节省显存同时保证了训练精度
 PRECISION=bf16
 # 如果使用state模式微调，lr最好调高，建议使用动态学习率，从1到0.01，使用其它模式建议5e-5到1e-4之间，优先选择5e-5
@@ -74,7 +75,7 @@ EPOCH_SAVE=1
 # 梯度累计，如果显存不够无法调整微批次大小
 # 建议基于以下公式设置参数：微批次大小x梯度累计 <= 8
 # 梯度累计并不是越大越好，更大的梯度累计会导致学不到东西，一般来说，数据集条数小于5k条时候，梯度累计建议最大为8
-MINI_BSZ=8
+MINI_BSZ=1
 # 优化策略, 可选值为：deepspeed_stage_1, deepspeed_stage_2, deepspeed_stage_3
 # 建议使用deepspeed_stage_2节省显存的同时也能保证微调速度
 # deepspeed_stage_1: 完全使用显卡内存，不适用于显存较小的显卡，在显存足够的时候速度较快，使用量化微调时建议开启以加速训练
@@ -88,7 +89,7 @@ GRAD_CP=1
 # pad: 从数据最开始到结束进行训练，如果数据长度小于上下文长度，则填充上下文，适用于微批次大小大于1的配置，建议使用此配置时根据最长数据调整上下文长度
 # only: 从数据最开始到结束进行训练，即使数据集长度超过上下文长度，也会从最开始截取到上下文长度的数据进行训练，适用于微批次大小为1的配置，建议使用此配置时根据最长数据调整上下文长度
 # 在上下文长度允许的情况下，更推荐使用pad（微批次大于1）或者only（微批次为1）模式，可以更好的学习到数据的连贯特征
-DATALOAD="only"
+DATALOAD="pad"
 # ------------------不常用训练参数----------------------
 # 开始训练的回合，可以用来恢复训练
 EPOCH_BEGIN=0
@@ -96,10 +97,20 @@ EPOCH_BEGIN=0
 # 此参数应该根据tokenizer/rwkv_vocab_v20230424.txt的词表大小进行调整，更改词表数量后应该修改此参数
 VOCAB_SIZE=65536
 # 嵌入维度
-# 此参数应该根据模型的参数进行调整，1B6为2048，3B为2560
+# 此参数应该根据模型的参数进行调整：
+# 14B EMBD_SIZE = 4096
+# 7B EMBD_SIZE = 4096
+# 3B EMBD_SIZE = 2560
+# 1.5B、1.6B、0.43B EMBD_SIZE = 2048
+# 0.17B EMBD_SIZE = 768
 EMBD_SIZE=2560
 # 嵌入层
-# 此参数应该根据模型的参数进行调整，1B6为24，3B为32
+# 此参数应该根据模型的参数进行调整：
+# 14B N_LAYER = 61
+# 7B N_LAYER = 32 
+# 3B N_LAYER = 32 
+# 1.5B、1.6B、0.43B N_LAYER = 24 
+# 0.17B  N_LAYER = 12 
 N_LAYER=32
 # Bata1
 BETA1=0.9
@@ -133,7 +144,7 @@ svd_niter=16
 # LISA模型的r值，代表采样的层数
 lisa_r=2
 # LISA模型的k值，代表LISA采样的频率
-lisa_k=200
+lisa_k=100
 
 
 
@@ -294,7 +305,7 @@ else if [ "$FINETUNE_MODE" = "lora" ]; then
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
     --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD --chunk_ctx $CHUNK_CTX \
     --lora_load $lora_load --lora --lora_r $lora_r --lora_alpha $lora_alpha \
-    --lora_dropout $lora_dropout --lora_parts=$lora_parts $INFCTX $V6_TRAIN $EMB
+    --lora_dropout $lora_dropout --lora_parts=$lora_parts $INFCTX $V6_TRAIN $EMB $FLA
 else if [ "$FINETUNE_MODE" = "lisa" ]; then
    python3 train.py --load_model model/$MODEL_PATH \
     --proj_dir output --data_file data/$DATA_PATH \
