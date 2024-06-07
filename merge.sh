@@ -65,13 +65,13 @@ fi
 
 case "$QUANT" in
 "4bit"|"nf4"|"fp4")
-    echo "-------------使用$QUANT精度量化的lora合并-------------"
+    echo "-------------使用$QUANT精度量化的$TRAIN_TYPE合并-------------"
     ;;
 "none")
-    echo "-------------不使用量化的lora合并-------------"
+    echo "-------------不使用量化的$TRAIN_TYPE合并-------------"
     ;;
 *)
-    echo "!!!!!!!!!!!!!不支持的量化精度参数$QUANT的lora合并，仅支持none,4bit, nf4, fp4!!!!!!!!!!!!!"
+    echo "!!!!!!!!!!!!!不支持的量化精度参数$QUANT的$TRAIN_TYPE合并，仅支持none,4bit, nf4, fp4!!!!!!!!!!!!!"
     exit 1
     ;;
 esac
