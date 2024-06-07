@@ -11,7 +11,6 @@ merge_pissa.*
 !/merge/.gitkeep
 !/model/.gitkeep
 !/output/.gitkeep
-/小渝
 filter.exe
 train.py
 
@@ -27,3 +26,4 @@ merge_state.py
 !/merge_model/.gitkeep
 /fla
 requirements.txt
+demo-pissa.sh
