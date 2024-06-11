@@ -30,19 +30,19 @@ FLA=0
 MODEL_PATH=RWKV-x060-World-3B-v2.1-20240417-ctx4096.pth
 # 数据路径
 # 对应的是在data文件夹下需要微调的使用数据的文件名
-DATA_PATH=train
+DATA_PATH=swj
 # 训练的回合数，达到回合数后会停止训练
 # 仅在数据读取模式为pad和only时生效
 EPOCH_COUNT=20
 # 回合步数
 # 应该根据训练数据的条数和微批次大小调整，公式为：数据集条数/微批次大小=回合步数
-EPOCH_STEPS=1344
+EPOCH_STEPS=589
 # 上下文长度
 # 使用./make_tokenize.sh {数据集名称}.jsonl {训练回合数}脚本进行数据分词时能得到如：### max_length = 208 这样的输出
 # 其中208就是数据中最长的数据的长度，在pad模式和only模式中，应该填入此数值以保证数据能够完全被训练
 # 如果数据过长无法训练，建议降低上下文长度并使用get模式读取数据，可以节省资源
 # 使用./make_tokenize.sh {数据集名称}.jsonl 1 进行数据分词即可
-CTX_LEN=6604
+CTX_LEN=600
 # 开启微调附加项的infctx参数后启用的设置，此设置用于确定在infctx中单次训练的上下文长度，此参数越高，消耗的显存越多
 # 相当于不开启infctx时的CTX_LEN参数，一般建议能开多大开多大（仅在infctx启用时有效）
 CHUNK_CTX=512
@@ -294,7 +294,7 @@ if [ "$TRAIN_TYPE" = "state" ]; then
     --lr_init $LR_INIT --lr_final $LR_FINAL --warmup_steps $WARMUP_STEPS --beta1 $BETA1 --beta2 $BETA2 --adam_eps $ADAM_EPS \
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
     --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD --chunk_ctx $CHUNK_CTX \
-    --train_type $TRAIN_TYPE $V6_TRAIN $FLA
+    $INFCTX $V6_TRAIN $FLA
 else if [ "$FINETUNE_MODE" = "lora" ]; then
    python3 train.py --load_model model/$MODEL_PATH \
     --proj_dir output --data_file data/$DATA_PATH \
@@ -305,7 +305,7 @@ else if [ "$FINETUNE_MODE" = "lora" ]; then
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
     --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD --chunk_ctx $CHUNK_CTX \
     --lora_load $lora_load --lora --lora_r $lora_r --lora_alpha $lora_alpha \
-    --lora_dropout $lora_dropout --lora_parts=$lora_parts $INFCTX $V6_TRAIN $EMB $FLA
+    --lora_dropout $lora_dropout --lora_parts=$lora_parts --quant $QUANT $INFCTX $V6_TRAIN $EMB $FLA
 else if [ "$FINETUNE_MODE" = "lisa" ]; then
    python3 train.py --load_model model/$MODEL_PATH \
     --proj_dir output --data_file data/$DATA_PATH \
@@ -326,7 +326,7 @@ else if [ "$FINETUNE_MODE" = "pissa" ]; then
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
     --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD --chunk_ctx $CHUNK_CTX \
     --lora_load $lora_load --lora --lora_r $lora_r --lora_alpha $lora_alpha --lora_dropout $lora_dropout --lora_parts=$lora_parts \
-    --PISSA --svd_niter $svd_niter $INFCTX $V6_TRAIN $EMB $FLA
+    --PISSA --svd_niter $svd_niter --quant $QUANT $INFCTX $V6_TRAIN $EMB $FLA
 else
     echo "!!!!!!!!!!!!!不支持的微调模式$FINETUNE_MODE，仅支持lora, pissa, lisa!!!!!!!!!!!!!"
     exit 1
