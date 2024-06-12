@@ -65,10 +65,12 @@ IN_FILE = sys.argv[1].strip()
 OUT_PATH = os.path.dirname(IN_FILE)
 OUT_NAME = os.path.splitext(os.path.basename(IN_FILE))[0]
 CTX_LEN = 0
+EOF = True
 try:
     CTX_LEN = int(sys.argv[3].strip())
 except:
-    pass
+    if len(sys.argv) > 3 and sys.argv[3].strip() == "--no-eof":
+        EOF = False
 with open(IN_FILE, "r", encoding="utf-8") as file:
     non_empty_lines = []
     count = 0
@@ -132,7 +134,8 @@ for line in shuffled_lines:
     if tokenizer.decode(out) != raw:
         print("ERROR" * 100)
         sys.exit(0)
-    out.append(0)  # [0] = end_of_doc for rwkv tokenizer
+    if EOF:
+        out.append(0)  # [0] = end_of_doc for rwkv tokenizer
     builder.add_item(np.array(out, dtype=np.uint16))
     builder.end_document()
     if cnt % 500 == 0:
@@ -152,8 +155,9 @@ for idx in TODO :
     ptr, size = data._index[idx]
     dix = data.get(idx=idx, offset=0, length=size).astype(int)
     print("-" * 70 + f"[{OUT_NAME} idx {idx} sz {size}]")
-    assert dix[-1] == 0
-    dix = dix[:-1]
+    if EOF:
+        assert dix[-1] == 0
+        dix = dix[:-1]
     if len(dix) > PREVIEW_LIMIT:
         try:
             print(tokenizer.decode(dix[:PREVIEW_LIMIT]))
@@ -182,7 +186,7 @@ if CTX_LEN > 0 and data_size >= CTX_LEN * 3:
             if is_prime(i):
                 print(f"\n### magic_prime = {i} (for ctxlen {CTX_LEN})\n")
                 break
-            
+print(f"### append_eof = {EOF}")
 print(f"### max_length = {max_size}")
 print(f"### max_length_power_of_two = {next_power_of_two(max_size)}")
 print(f"### data_line_count = {data_length//N_EPOCH}")
