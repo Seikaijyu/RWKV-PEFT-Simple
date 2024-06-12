@@ -14,9 +14,9 @@ FINETUNE_MODE="pissa"
 TRAIN_TYPE="none"
 # 训练的RWKV模型版本，可选值为：v5, v6
 MODEL_VERSION="v6"
-# 量化方式，可选值为：none, 4bit, nf4, fp4
-# 一般推荐使用nf4，分布更均匀
-QUANT="none"
+# 量化方式，可选值为：none, 4bit, nf4, fp4, int8
+# 4位量化一般推荐使用nf4，分布更均匀，8位量化则推荐int8，更推荐8位量化，损失更小，int8量化和非量化结果基本一致
+QUANT="int8"
 # 微调embedding层，可选值为：0（关闭）, 1（开启）
 # 开启时不会冻结embedding层和head层，这两层和lora_r没有任何关系，调高也不会影响这两层的微调
 # embedding层是模型理解输入数据的基础，而head层则直接影响模型的输出
@@ -236,11 +236,11 @@ if [ "$QUANT" != "none" ]; then
         exit 1
     fi
     case "$QUANT" in
-    "4bit"|"nf4"|"fp4")
+    "4bit"|"nf4"|"fp4"|"int8")
         echo "-------------使用$QUANT精度量化微调-------------"
         ;;
     *)
-        echo "!!!!!!!!!!!!!不支持的量化精度参数$QUANT，仅支持4bit, nf4, fp4!!!!!!!!!!!!!"
+        echo "!!!!!!!!!!!!!不支持的量化精度参数$QUANT，仅支持4bit, nf4, fp4, int8!!!!!!!!!!!!!"
         exit 1
         ;;
     esac
@@ -293,7 +293,7 @@ if [ "$TRAIN_TYPE" = "state" ]; then
     --n_layer $N_LAYER --n_embd $EMBD_SIZE \
     --lr_init $LR_INIT --lr_final $LR_FINAL --warmup_steps $WARMUP_STEPS --beta1 $BETA1 --beta2 $BETA2 --adam_eps $ADAM_EPS \
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
-    --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD --chunk_ctx $CHUNK_CTX \
+    --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD --chunk_ctx $CHUNK_CTX --quant $QUANT \
     $INFCTX $V6_TRAIN $FLA
 else if [ "$FINETUNE_MODE" = "lora" ]; then
    python3 train.py --load_model model/$MODEL_PATH \
