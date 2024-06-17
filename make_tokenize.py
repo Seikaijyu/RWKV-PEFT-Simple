@@ -71,6 +71,9 @@ try:
 except:
     if len(sys.argv) > 3 and sys.argv[3].strip() == "--no-eof":
         EOF = False
+else:
+    if len(sys.argv) > 4 and sys.argv[4].strip() == "--no-eof":
+        EOF = False
 with open(IN_FILE, "r", encoding="utf-8") as file:
     non_empty_lines = []
     count = 0
@@ -127,20 +130,29 @@ max_size = 0
 data_length = 0
 for line in shuffled_lines:
     raw = json.loads(line)["text"]
-    data_length += 1
-    if len(raw) > max_size:
-        max_size = len(raw)
     out = tokenizer.encode(raw)
     if tokenizer.decode(out) != raw:
         print("ERROR" * 100)
         sys.exit(0)
     if EOF:
         out.append(0)  # [0] = end_of_doc for rwkv tokenizer
+    if CTX_LEN > 0 and len(out) > CTX_LEN:
+        continue
+    data_length += 1
+    if len(out) > max_size:
+        max_size = len(out)
     builder.add_item(np.array(out, dtype=np.uint16))
     builder.end_document()
     if cnt % 500 == 0:
         print(cnt, end=" ", flush=True)
     cnt += 1
+
+if data_length <= 0:
+    if CTX_LEN > 0:
+        print("Error: The data has been filtered to 0 entries. Please adjust the filtered context length.")
+    else:
+        print("Error: No data has been provided. Please add data.")
+    sys.exit(0)
 
 builder.finalize(f"{OUT_NAME}.idx")
 print("done")
@@ -179,13 +191,13 @@ for idx in TODO :
 
 print(f"{'-'*80}\n### Final {OUT_NAME}.bin/idx has {data_size} tokens, {data_len} items. Dtype {data._index.dtype}")
 
-if CTX_LEN > 0 and data_size >= CTX_LEN * 3:
-    n_chunk = int(data_size // CTX_LEN) - 1
-    for i in range(n_chunk, 0, -1):
-        if i % 3 == 2:
-            if is_prime(i):
-                print(f"\n### magic_prime = {i} (for ctxlen {CTX_LEN})\n")
-                break
+# if CTX_LEN > 0 and data_size >= CTX_LEN * 3:
+#     n_chunk = int(data_size // CTX_LEN) - 1
+#     for i in range(n_chunk, 0, -1):
+#         if i % 3 == 2:
+#             if is_prime(i):
+#                 print(f"\n### magic_prime = {i} (for ctxlen {CTX_LEN})\n")
+#                 break
 print(f"### append_eof = {EOF}")
 print(f"### max_length = {max_size}")
 print(f"### max_length_power_of_two = {next_power_of_two(max_size)}")

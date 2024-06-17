@@ -4,12 +4,12 @@
 IN_FILE="data/$1"
 N_EPOCH=$2
 CTX_LEN=$3
-
+NO_EOF=$4
 # 获取输入文件的目录路径
 TARGET_DIR=$(dirname $IN_FILE)
 
 # 执行命令
-python3 make_tokenize.py $IN_FILE $N_EPOCH $CTX_LEN
+python3 make_tokenize.py $IN_FILE $N_EPOCH $CTX_LEN $NO_EOF
 
 # 获取输入文件的基本名称（没有扩展名）
 BASE_NAME=$(basename $IN_FILE .jsonl)
