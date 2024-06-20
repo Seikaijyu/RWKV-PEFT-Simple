@@ -82,31 +82,32 @@ with open(IN_FILE, "r", encoding="utf-8") as file:
         stripped_line = line.strip()
         if stripped_line:
             try:
-                json.loads(stripped_line)
+                data_text = json.loads(stripped_line)["text"]
+                non_empty_lines.append(data_text)
             except:
                 print(f"Error in line {count}: {stripped_line}")
                 print(f"Please check your jsonl file. (Failed at line {count})")
                 sys.exit(0)
-            non_empty_lines.append(stripped_line)
+            
 
 # 在内存中重复并洗牌，避免重复写入和读取文件
 shuffled_lines = []
 for _ in range(N_EPOCH):
     random.shuffle(non_empty_lines)
     shuffled_lines.extend(non_empty_lines)
-def is_prime(n):
-        if n <= 1:
-            return False
-        if n <= 3:
-            return True
-        if n % 2 == 0 or n % 3 == 0:
-            return False
-        i = 5
-        while i * i <= n:
-            if n % i == 0 or n % (i + 2) == 0:
-                return False
-            i += 6
-        return True
+# def is_prime(n):
+#         if n <= 1:
+#             return False
+#         if n <= 3:
+#             return True
+#         if n % 2 == 0 or n % 3 == 0:
+#             return False
+#         i = 5
+#         while i * i <= n:
+#             if n % i == 0 or n % (i + 2) == 0:
+#                 return False
+#             i += 6
+#         return True
 class MMapIndexedDatasetBuilder(object):
     def __init__(self, out_file, dtype=np.uint16):
         self._data_file = open(out_file, "wb")
@@ -128,8 +129,7 @@ builder = MMapIndexedDatasetBuilder(f"{OUT_NAME}.bin")
 cnt = 0
 max_size = 0
 data_length = 0
-for line in shuffled_lines:
-    raw = json.loads(line)["text"]
+for raw in shuffled_lines:
     out = tokenizer.encode(raw)
     if tokenizer.decode(out) != raw:
         print("ERROR" * 100)
