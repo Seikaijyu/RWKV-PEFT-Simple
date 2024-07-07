@@ -30,19 +30,19 @@ FLA=0
 MODEL_PATH=RWKV-x060-World-3B-v2.1-20240417-ctx4096.pth
 # 数据路径
 # 对应的是在data文件夹下需要微调的使用数据的文件名
-DATA_PATH=swj
+DATA_PATH=sl
 # 训练的回合数，达到回合数后会停止训练
 # 仅在数据读取模式为pad和only时生效
 EPOCH_COUNT=20
 # 回合步数
 # 应该根据训练数据的条数和微批次大小调整，公式为：数据集条数/微批次大小=回合步数
-EPOCH_STEPS=589
+EPOCH_STEPS=197
 # 上下文长度
 # 使用./make_tokenize.sh {数据集名称}.jsonl {训练回合数}脚本进行数据分词时能得到如：### max_length = 208 这样的输出
 # 其中208就是数据中最长的数据的长度，在pad模式和only模式中，应该填入此数值以保证数据能够完全被训练
 # 如果数据过长无法训练，建议降低上下文长度并使用get模式读取数据，可以节省资源
 # 使用./make_tokenize.sh {数据集名称}.jsonl 1 进行数据分词即可
-CTX_LEN=600
+CTX_LEN=4421
 # 开启微调附加项的infctx参数后启用的设置，此设置用于确定在infctx中单次训练的上下文长度，此参数越高，消耗的显存越多
 # 相当于不开启infctx时的CTX_LEN参数，一般建议能开多大开多大（仅在infctx启用时有效）
 CHUNK_CTX=512
@@ -110,7 +110,7 @@ EMBD_SIZE=2560
 # 7B N_LAYER = 32 
 # 3B N_LAYER = 32 
 # 1.5B、1.6B、0.43B N_LAYER = 24 
-# 0.17B  N_LAYER = 12 
+# 0.17B  N_LAYER = 12
 N_LAYER=32
 # Bata1
 BETA1=0.9
@@ -216,6 +216,7 @@ INFCTX=""
 case "$TRAIN_TYPE" in
 "state")
     echo "-------------使用$TRAIN_TYPE附加模式微调-------------"
+    INFCTX="--train_type state"
     ;;
 "infctx")
     echo "-------------使用$TRAIN_TYPE附加模式微调-------------"
