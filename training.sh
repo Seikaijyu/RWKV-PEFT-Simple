@@ -326,7 +326,7 @@ else if [ "$FINETUNE_MODE" = "pissa" ]; then
     --lr_init $LR_INIT --lr_final $LR_FINAL --warmup_steps $WARMUP_STEPS --beta1 $BETA1 --beta2 $BETA2 --adam_eps $ADAM_EPS \
     --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
     --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD --chunk_ctx $CHUNK_CTX \
-    --lora_load $lora_load --lora --lora_r $lora_r --lora_alpha $lora_alpha --lora_dropout $lora_dropout --lora_parts=$lora_parts \
+    --pissa_load "$lora_load.pth" --pissa_init "init_pissa.pth" --lora --lora_r $lora_r --lora_alpha $lora_alpha --lora_dropout $lora_dropout --lora_parts=$lora_parts \
     --PISSA --svd_niter $svd_niter --quant $QUANT $INFCTX $V6_TRAIN $EMB $FLA
 else
     echo "!!!!!!!!!!!!!不支持的微调模式$FINETUNE_MODE，仅支持lora, pissa, lisa!!!!!!!!!!!!!"
