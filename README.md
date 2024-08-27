@@ -1,7 +1,7 @@
 # RWKV-PEFT-Simple
 
 **此项目是为[JL-er](https://github.com/JL-er)的RWKV-PEFT项目提供的快捷微调包**
-## <p style="color: red">依赖项目[RWKV-PEFT](https://github.com/Seikaijyu/RWKV-PEFT)更新到了`b24c73c`（2024/8/27）版本，如需使用mask，需先使用`pip install rwkv==0.8.26`安装依赖库后使用</p>
+<h2><p style="color: red">依赖项目[RWKV-PEFT](https://github.com/Seikaijyu/RWKV-PEFT)更新到了`b24c73c`（2024/8/27）版本，如需使用mask，需先使用`pip install rwkv==0.8.26`安装依赖库后使用</p></h2>
 **注意：本项目默认你有一定的动手和学习能力**
 #### 1. 准备工作（linux和windows通用）
 * 此项目依赖于`RWKV-PEFT`仓库，必须下载后并覆盖到根目录，也就是`RWKV-PEFT-Simple`解压目录一起使用，建议跟随此步骤一步一步学习
