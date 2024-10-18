@@ -1,27 +1,31 @@
 # 使用方式：调整参数后使用`./training.sh`运行
 
 # ------------------通用参数----------------------
-# 微调方式，可选值为：lora, pissa，lisa
+# 微调方式，可选值为：lora, pissa，bone, state_tuning
 # lora: 使用标准lora微调，但是lora微调速度较慢，效果一般，更推荐pissa
 # pissa: lora的改进版本，使用快速奇异值分解，收敛速度更快，效果更好，推荐使用
-# lisa: lisa使用类似全量微调的方式，冻结多层，每次只选择几层进行微调，微调的每个epoch直接输出模型，但是目前还有一些小问题，不推荐使用
-FINETUNE_MODE="pissa"
+# bone: 不同于lora系列的全新微调方法。bone_b（类似lora中的lora_r）越大，微调效果越好，泛化越强
+# state_tuning: 微调init state，微调速度更快，占用显存更低。
+#   此微调不会让模型学到没有在预训练中学过的数据，如有需要请使用其它微调方式。
+FINETUNE_MODE="bone"
 
-# 微调附加类型，可选值为：none, state, infctx
-# state: 微调init state，微调速度更快，占用显存更低。
-#  此微调不会让模型学到没有在预训练中学过的数据，如有需要请使用其它微调方式。
-#  开启后会覆盖微调方式设置，后续将允许作为附加类型使用，目前暂时未支持
+# 微调附加类型，可选值为：none, infctx
 # infctx: infctx使用时间换内存进行训练，当显存不足但语料过长时建议开启
 #  使用infctx时必须将DATALOAD修改为pad模式，否则会导致nan
 #  开启后使用更长上下文微调时，不会导致显存使用量增加。
 #  开启时最好同时开启FLA以启用triton算子，因为cuda算子的梯度有点问题
 TRAIN_TYPE="none"
 
+# 机器学习实验跟踪平台 wandb (Weights & Biases)。
+WANDB=""
+
 # 训练的RWKV模型的架构版本，可选值为：v5, v6
 MODEL_VERSION="v6"
 
-# 量化方式，可选值为：none, 4bit, nf4, fp4, int8
-# 4位量化一般推荐使用nf4，分布更均匀，8位量化则推荐int8，更推荐8位量化，损失更小，int8量化和非量化结果基本一致
+# 量化方式，可选值为：none, 4bit, nf4, fp4, int8, fp8
+# 4位量化一般推荐使用nf4，分布更均匀，8位量化则推荐int8，更推荐8位量化，损失更小
+# int8量化在pissa中损失更小，而在bone中和非量化结果基本一致
+# fp8损失更大，但是训练效率更高
 QUANT="int8"
 
 # 微调embedding层，可选值为：0（关闭）, 1（开启）
@@ -36,7 +40,7 @@ FLA=0
 
 # 模型路径
 # 对应的是在model文件夹下需要微调的模型的文件名
-MODEL_PATH=RWKV-x060-World-3B-v2.1-20240417-ctx4096.pth
+MODEL_PATH=RWKV-x060-ChnNovel-3B-20240807-ctx4096.pth
 
 # 数据路径
 # 对应的是在data文件夹下需要微调的使用数据的文件名
@@ -44,13 +48,16 @@ DATA_PATH=sample
 
 # 训练的回合数，达到回合数后会停止训练
 # 仅在数据读取模式为pad和only时生效
-EPOCH_COUNT=20
+EPOCH_COUNT=5
+
+# 训练数据自动洗牌，从第一个epoch开始打乱训练数据排列
+DATA_SHUFFLE=1
 
 # 回合步数
 # 应该根据训练数据的条数和微批次大小调整，公式为：数据集条数/微批次大小=回合步数
 EPOCH_STEPS=16
 
-# loss掩码，可选值为：none, pad, qa
+# loss掩码，可选值为：none, pad, qa, se
 # 此参数用于指示模型在计算损失时应该关注哪些位置，带来的好处是LLM不会学习和模仿Mask部分说话
 # 让模型可以更快地学习到有用的特征，并减少不必要的计算
 # qa: 忽略掉名为"User"的角色回复的loss不纳入计算
@@ -69,6 +76,7 @@ CTX_LEN=601
 
 # 开启微调附加项的infctx参数后启用的设置，此设置用于确定在infctx中单次训练的上下文长度，此参数越高，消耗的显存越多
 # 相当于不开启infctx时的CTX_LEN参数，一般建议能开多大开多大（仅在infctx启用时有效）
+# CTX_LEN必须大于或者等于此参数
 CHUNK_CTX=512
 
 # 精度，可选值为：fp32, bf16, fp16，通常建议使用bf16，节省显存同时保证了训练精度
@@ -161,18 +169,16 @@ BETA2=0.999
 # ADAM epsilon
 ADAM_EPS=1e-8
 
-# ------------------Lora和Pissa设置参数----------------------
-# lora_parts
-lora_parts=att,ffn,time,ln
+# ------------------LoRA设置参数----------------------
 
-# LORA模型路径，代表从哪个LORA模型开始微调，格式一般为
-# "rwkv-0" "rwkv-10"这样即可
+# LoRA训练模型路径，代表从哪个LoRA模型开始微调，格式一般为
+# "rwkv-0.pth" "rwkv-10.pth"这样即可
 lora_load=""
+# LoRA模型的r值
 
-# LORA模型的r值
-# 越大的r值，微调的效果越好，同时也能让pissa微调的奇异值分解精度越高，但是显存占用越高，建议最大128
 # 如果显存或者RAM不足，应该调低此值，一般训练使用32或者64即可，实在不够也可以用16
 lora_r=64
+
 
 # LORA模型的alpha值
 # 此值应该配合r值调整
@@ -185,18 +191,36 @@ lora_alpha=128
 # 但同时也会降低训练效率，因此在训练过程中，lora_dropout的值一般设置为0.01
 lora_dropout=0.01
 
-# pissa的快速奇异值分解的迭代次数，迭代次数越高损失越低，但是初始化的速度就越慢
+
+# ------------------PiSSA设置参数----------------------
+# PiSSA初始化的模型路径，代表从哪个PiSSA模型的初始化开始加载PiSSA
+# 如果需要继续训练，一般设置为
+# "init_pissa.pth"即可
+pissa_init=""
+
+# PiSSA训练模型路径，代表从哪个PiSSA模型开始微调，格式一般为
+# "rwkv-0.pth" "rwkv-10.pth"这样即可
+pissa_load=""
+
+# PiSSA模型的r值
+# 越大的r值，微调的效果越好，同时也能让PiSSA微调的奇异值分解精度越高，但是显存占用越高，建议最大128
+# 如果显存或者RAM不足，应该调低此值，一般训练使用32或者64即可，实在不够也可以用16
+pissa_r=64
+
+# PiSSA的快速奇异值分解的迭代次数，迭代次数越高损失越低，但是初始化的速度就越慢
 # 如果需要速度，可以适当调低此值，但是损失会增加
 # 一般来说svd_niter=16后就已经非常接近奇异值分解的结果了，往后的迭代次数对结果影响不会很大
 # 此外，lora_r对于svd_niter的影响也很大，lora_r越大，训练损失越低，但是svd_niter也需要相应增加
 svd_niter=16
 
-# ------------------lisa设置参数----------------------
-# LISA模型的r值，代表采样的层数
-lisa_r=2
 
-# LISA模型的k值，代表LISA采样的频率
-lisa_k=100
+# ------------------Bone设置参数----------------------
+# Bone训练模型路径，代表从哪个Bone模型开始微调，格式一般为
+# "rwkv-0.pth" "rwkv-10.pth"这样即可
+bone_load=""
+
+# Bone的b值，类似lora的r，bone_b=128相当于lora_r=64的占用，越大的值微调的参数量越多
+bone_b=128
 
 
 
@@ -266,51 +290,44 @@ esac
 
 INFCTX=""
 case "$TRAIN_TYPE" in
-"state")
-    echo "-------------使用$TRAIN_TYPE附加模式微调-------------"
-    INFCTX="--train_type state"
-    ;;
 "infctx")
+    if [ "$FINETUNE_MODE" = "state_tuning" ]; then
+        echo "!!!!!!!!!!!!!state_tuning不支持的附加微调模式$TRAIN_TYPE!!!!!!!!!!!!!"
+        exit 1
+    fi
     echo "-------------使用$TRAIN_TYPE附加模式微调-------------"
     INFCTX="--train_type infctx"
     ;;
 "none")
     ;;
 *)
-    echo "!!!!!!!!!!!!!不支持的附加微调模式$TRAIN_TYPE，仅支持none, state, infctx!!!!!!!!!!!!!"
+    echo "!!!!!!!!!!!!!不支持的附加微调模式$TRAIN_TYPE，仅支持none, infctx!!!!!!!!!!!!!"
     exit 1
     ;;
 esac
 
 
 case "$LOSS_MASK" in
-    "qa"|"pad")
+    "qa"|"pad"|"se")
         echo "-------------使用$LOSS_MASK模式-------------"
         ;;
 "none")
     ;;
 *)
-    echo "!!!!!!!!!!!!!不支持的loss掩码参数$LOSS_MASK，仅支持none, qa, pad!!!!!!!!!!!!!"
+    echo "!!!!!!!!!!!!!不支持的loss掩码参数$LOSS_MASK，仅支持none, qa, pad, se!!!!!!!!!!!!!"
     exit 1
     ;;
 esac
 
-# 如果是lisa模式，则不允许量化微调
-if [ "$QUANT" != "none" ]; then
-    if [ "$FINETUNE_MODE" = "lisa" ]; then
-        echo "!!!!!!!!!!!!!LISA微调不支持量化!!!!!!!!!!!!!"
-        exit 1
-    fi
-    case "$QUANT" in
-    "4bit"|"nf4"|"fp4"|"int8")
-        echo "-------------使用$QUANT精度量化微调-------------"
-        ;;
-    *)
-        echo "!!!!!!!!!!!!!不支持的量化精度参数$QUANT，仅支持4bit, nf4, fp4, int8!!!!!!!!!!!!!"
-        exit 1
-        ;;
-    esac
-fi
+case "$QUANT" in
+"none"|"4bit"|"nf4"|"fp4"|"int8"|"fp8")
+    echo "-------------使用$QUANT精度量化微调-------------"
+    ;;
+*)
+    echo "!!!!!!!!!!!!!不支持的量化精度参数$QUANT，仅支持none, 4bit, nf4, fp4, int8, fp8!!!!!!!!!!!!!"
+    exit 1
+    ;;
+esac
 
 if [ "$EMB_FINETUNE" = 0 ]; then
     case "$FINETUNE_MODE" in
@@ -322,6 +339,14 @@ if [ "$EMB_FINETUNE" = 0 ]; then
     esac
     EMB=""
 elif [ "$EMB_FINETUNE" = 1 ]; then
+    case "$FINETUNE_MODE" in
+    "lora"|"pissa")
+        ;;
+    *)
+        echo "!!!!!!!!!!!!!不支持的peft方法$FINETUNE_MODE，无法微调embedding层!!!!!!!!!!!!!"
+        exit 1
+        ;;
+    esac
     echo "-------------微调embedding层-------------"
     EMB="--emb"
 else
@@ -350,56 +375,58 @@ case "$DATALOAD" in
     ;;
 esac
 
-if [ "$TRAIN_TYPE" = "state" ]; then
-   python3 train.py --load_model model/$MODEL_PATH \
-    --proj_dir output --data_file data/$DATA_PATH \
-    --data_type binidx --vocab_size $VOCAB_SIZE \
-    --ctx_len $CTX_LEN --epoch_steps $EPOCH_STEPS --epoch_count $EPOCH_COUNT --epoch_begin $EPOCH_BEGIN --epoch_save $EPOCH_SAVE --micro_bsz $MICRO_BSZ \
-    --n_layer $N_LAYER --n_embd $EMBD_SIZE \
-    --lr_init $LR_INIT --lr_final $LR_FINAL --warmup_steps $WARMUP_STEPS --beta1 $BETA1 --beta2 $BETA2 --adam_eps $ADAM_EPS \
-    --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
-    --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD --chunk_ctx $CHUNK_CTX --quant $QUANT --loss_mask $LOSS_MASK \
-    $INFCTX $V6_TRAIN $FLA
+if [ "$FINETUNE_MODE" = "state_tuning" ]; then
+   COMMAND="python3 train.py --load_model 'model/${MODEL_PATH}' \
+    --proj_dir 'output' --data_file 'data/${DATA_PATH}' \
+    --data_type binidx --vocab_size ${VOCAB_SIZE} \
+    --ctx_len ${CTX_LEN} --epoch_steps ${EPOCH_STEPS} --epoch_count ${EPOCH_COUNT} --epoch_begin ${EPOCH_BEGIN} --epoch_save ${EPOCH_SAVE} --micro_bsz ${MICRO_BSZ} \
+    --n_layer ${N_LAYER} --n_embd ${EMBD_SIZE} \
+    --lr_init ${LR_INIT} --lr_final ${LR_FINAL} --warmup_steps ${WARMUP_STEPS} --beta1 ${BETA1} --beta2 ${BETA2} --adam_eps ${ADAM_EPS} \
+    --accelerator gpu --devices ${GPU_COUNT} --precision ${PRECISION} --strategy ${DEEPSPEED_STRATEGY} --grad_cp ${GRAD_CP} \
+    --accumulate_grad_batches ${MINI_BSZ} --dataload ${DATALOAD} --chunk_ctx ${CHUNK_CTX} --data_shuffle ${DATA_SHUFFLE} \
+    --quant ${QUANT} --loss_mask ${LOSS_MASK} \
+    --wandb \"${WANDB}\" ${INFCTX} ${V6_TRAIN} ${FLA}"
 elif [ "$FINETUNE_MODE" = "lora" ]; then
-    if [ -n "$lora_load" ]; then
-        LOAD="--lora_load $lora_load"
-    fi
-   python3 train.py --load_model model/$MODEL_PATH \
-    --proj_dir output --data_file data/$DATA_PATH \
-    --data_type binidx --vocab_size $VOCAB_SIZE \
-    --ctx_len $CTX_LEN --epoch_steps $EPOCH_STEPS --epoch_count $EPOCH_COUNT --epoch_begin $EPOCH_BEGIN --epoch_save $EPOCH_SAVE --micro_bsz $MICRO_BSZ \
-    --n_layer $N_LAYER --n_embd $EMBD_SIZE \
-    --lr_init $LR_INIT --lr_final $LR_FINAL --warmup_steps $WARMUP_STEPS --beta1 $BETA1 --beta2 $BETA2 --adam_eps 1e-8 \
-    --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
-    --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD --chunk_ctx $CHUNK_CTX \
-    $LOAD --lora --lora_r $lora_r --lora_alpha $lora_alpha \
-    --lora_dropout $lora_dropout --lora_parts=$lora_parts --quant $QUANT --loss_mask $LOSS_MASK $INFCTX $V6_TRAIN $EMB $FLA
-elif [ "$FINETUNE_MODE" = "lisa" ]; then
-   python3 train.py --load_model model/$MODEL_PATH \
-    --proj_dir output --data_file data/$DATA_PATH \
-    --data_type binidx --vocab_size $VOCAB_SIZE \
-    --ctx_len $CTX_LEN --epoch_steps $EPOCH_STEPS --epoch_count $EPOCH_COUNT --epoch_begin $EPOCH_BEGIN --epoch_save $EPOCH_SAVE --micro_bsz $MICRO_BSZ \
-    --n_layer $N_LAYER --n_embd $EMBD_SIZE \
-    --lr_init $LR_INIT --lr_final $LR_FINAL --warmup_steps $WARMUP_STEPS --beta1 $BETA1 --beta2 $BETA2 --adam_eps $ADAM_EPS \
-    --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
-    --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD --chunk_ctx $CHUNK_CTX \
-    --LISA --lisa_r $lisa_r --lisa_k $lisa_k --loss_mask $LOSS_MASK $INFCTX $V6_TRAIN $EMB $FLA
+    printf -v lora_config '{"lora_load":"%s","lora_r":%s,"lora_alpha":%s,"lora_dropout":%s}' "$lora_load" "$lora_r" "$lora_alpha" "$lora_dropout"
+   COMMAND="python3 train.py --load_model 'model/${MODEL_PATH}' \
+    --proj_dir 'output' --data_file 'data/${DATA_PATH}' \
+    --data_type binidx --vocab_size ${VOCAB_SIZE} \
+    --ctx_len ${CTX_LEN} --epoch_steps ${EPOCH_STEPS} --epoch_count ${EPOCH_COUNT} --epoch_begin ${EPOCH_BEGIN} --epoch_save ${EPOCH_SAVE} --micro_bsz ${MICRO_BSZ} \
+    --n_layer ${N_LAYER} --n_embd ${EMBD_SIZE} \
+    --lr_init ${LR_INIT} --lr_final ${LR_FINAL} --warmup_steps ${WARMUP_STEPS} --beta1 ${BETA1} --beta2 ${BETA2} --adam_eps 1e-8 \
+    --accelerator gpu --devices ${GPU_COUNT} --precision ${PRECISION} --strategy ${DEEPSPEED_STRATEGY} --grad_cp ${GRAD_CP} \
+    --accumulate_grad_batches ${MINI_BSZ} --dataload ${DATALOAD} --chunk_ctx ${CHUNK_CTX} --data_shuffle ${DATA_SHUFFLE} \
+    --peft lora --lora_config '${lora_config}' \
+    --wandb \"${WANDB}\" --quant ${QUANT} --loss_mask ${LOSS_MASK} ${INFCTX} ${V6_TRAIN} ${EMB} ${FLA}"
+elif [ "$FINETUNE_MODE" = "bone" ]; then
+    printf -v bone_config '{"bone_load":"%s","bone_r":%s}' "$bone_load" "$bone_b"
+   COMMAND="python3 train.py --load_model 'model/${MODEL_PATH}' \
+    --proj_dir 'output' --data_file 'data/${DATA_PATH}' \
+    --data_type binidx --vocab_size ${VOCAB_SIZE} \
+    --ctx_len ${CTX_LEN} --epoch_steps ${EPOCH_STEPS} --epoch_count ${EPOCH_COUNT} --epoch_begin ${EPOCH_BEGIN} --epoch_save ${EPOCH_SAVE} --micro_bsz ${MICRO_BSZ} \
+    --n_layer ${N_LAYER} --n_embd ${EMBD_SIZE} \
+    --lr_init ${LR_INIT} --lr_final ${LR_FINAL} --warmup_steps ${WARMUP_STEPS} --beta1 ${BETA1} --beta2 ${BETA2} --adam_eps ${ADAM_EPS} \
+    --accelerator gpu --devices ${GPU_COUNT} --precision ${PRECISION} --strategy ${DEEPSPEED_STRATEGY} --grad_cp ${GRAD_CP} \
+    --accumulate_grad_batches ${MINI_BSZ} --dataload ${DATALOAD} --chunk_ctx ${CHUNK_CTX} --data_shuffle ${DATA_SHUFFLE} \
+    --wandb \"${WANDB}\" --quant ${QUANT} --peft bone --bone_config '${bone_config}' --loss_mask ${LOSS_MASK} ${INFCTX} ${V6_TRAIN} ${EMB} ${FLA}"
 elif [ "$FINETUNE_MODE" = "pissa" ]; then
-    if [ -n "$lora_load" ]; then
-        LOAD="--pissa_load $lora_load.pth --pissa_init 'init_pissa.pth'"
-    fi
-
-   python3 train.py --load_model model/$MODEL_PATH \
-    --proj_dir output --data_file data/$DATA_PATH \
-    --data_type binidx --vocab_size $VOCAB_SIZE \
-    --ctx_len $CTX_LEN --epoch_steps $EPOCH_STEPS --epoch_count $EPOCH_COUNT --epoch_begin $EPOCH_BEGIN --epoch_save $EPOCH_SAVE --micro_bsz $MICRO_BSZ \
-    --n_layer $N_LAYER --n_embd $EMBD_SIZE \
-    --lr_init $LR_INIT --lr_final $LR_FINAL --warmup_steps $WARMUP_STEPS --beta1 $BETA1 --beta2 $BETA2 --adam_eps $ADAM_EPS \
-    --accelerator gpu --devices $GPU_COUNT --precision $PRECISION --strategy $DEEPSPEED_STRATEGY --grad_cp $GRAD_CP \
-    --accumulate_grad_batches $MINI_BSZ --dataload $DATALOAD --chunk_ctx $CHUNK_CTX \
-    $LOAD --lora --lora_r $lora_r --lora_alpha $lora_alpha --lora_dropout $lora_dropout --lora_parts=$lora_parts \
-    --PISSA --svd_niter $svd_niter --quant $QUANT --loss_mask $LOSS_MASK $INFCTX $V6_TRAIN $EMB $FLA
+    printf -v pissa_config '{"pissa_load":"%s","pissa_init":"%s","pissa_r":%s,"svd_niter":%s}' "$pissa_load" "$pissa_init" "$pissa_r" "$svd_niter"
+   COMMAND="python3 train.py --load_model 'model/${MODEL_PATH}' \
+    --proj_dir 'output' --data_file 'data/${DATA_PATH}' \
+    --data_type binidx --vocab_size ${VOCAB_SIZE} \
+    --ctx_len ${CTX_LEN} --epoch_steps ${EPOCH_STEPS} --epoch_count ${EPOCH_COUNT} --epoch_begin ${EPOCH_BEGIN} --epoch_save ${EPOCH_SAVE} --micro_bsz ${MICRO_BSZ} \
+    --n_layer ${N_LAYER} --n_embd ${EMBD_SIZE} \
+    --lr_init ${LR_INIT} --lr_final ${LR_FINAL} --warmup_steps ${WARMUP_STEPS} --beta1 ${BETA1} --beta2 ${BETA2} --adam_eps ${ADAM_EPS} \
+    --accelerator gpu --devices ${GPU_COUNT} --precision ${PRECISION} --strategy ${DEEPSPEED_STRATEGY} --grad_cp ${GRAD_CP} \
+    --accumulate_grad_batches ${MINI_BSZ} --dataload ${DATALOAD} --chunk_ctx ${CHUNK_CTX} --data_shuffle ${DATA_SHUFFLE} \
+    --peft pissa --pissa_config '${pissa_config}' \
+    --wandb \"${WANDB}\" --quant ${QUANT} --loss_mask ${LOSS_MASK} ${INFCTX} ${V6_TRAIN} ${EMB} ${FLA}"
 else
-    echo "!!!!!!!!!!!!!不支持的微调模式$FINETUNE_MODE，仅支持lora, pissa, lisa!!!!!!!!!!!!!"
+    echo "!!!!!!!!!!!!!不支持的微调模式$FINETUNE_MODE，仅支持state_tuning, lora, pissa, bone!!!!!!!!!!!!!"
     exit 1
 fi
+CURRENT_DATE_TIME=$(date +"%Y-%m-%d %H:%M:%S")
+echo "# $CURRENT_DATE_TIME" >> history_run_command.sh.log
+echo "$COMMAND" >> history_run_command.sh.log
+echo "" >> history_run_command.sh.log
+eval "$COMMAND" 
