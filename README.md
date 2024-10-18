@@ -1,4 +1,4 @@
-## 依赖项目[RWKV-PEFT](https://github.com/Seikaijyu/RWKV-PEFT)更新到了`b24c73c`（2024/8/27）版本，如需使用mask，需先使用`pip install rwkv==0.8.26`安装依赖库后使用
+## 依赖项目[RWKV-PEFT](https://github.com/Seikaijyu/RWKV-PEFT)更新到了`5e57b75`（2024/10/18）版本，此版本的`requirements.txt`已经完善，可以一键安装环境，并且删除了LISA微调支持，添加了更好的Bone微调方法（loss更好拟合，效果优于PiSSA），修复了众多bug，可参考`training.sh`默认设置尝试使用bone微调。
 ---
 # RWKV-PEFT-Simple
 
@@ -19,19 +19,19 @@
 * 你可以根据自己想法做一些遵循此格式的训练数据，或者去国外的[huggingface](https://huggingface.co/)找一些公开的开源数据，国内也有类似的网站，比如[modelscope](https://modelscope.cn/)也可以找到一些开源数据
 * 所有数据都应该放入`/data`目录中
 #### 3. 数据分词
-* 现在你得到了数据，进入之前在文件夹打开的ubuntu终端中，使用以下格式`./make_tokenize.sh {data目录中的文件名称，包括.jsonl} {训练的回合数}`进行数据分词
-* 你可能会注意到，数据分词后会出现如`### The first ten factors of the five numbers nearby (±5):`这样的输出，下面跟着一批输出，这其实是根据此数据数量的10个值范围中推荐填入的`MICRO_BSZ`以及`EPOCH_STEPS`，使用此值可以让你在完整训练每一轮数据的同时加速训练时间（但同时也需要更多的显存），所以设置与否应该和你的显存挂钩
+* 现在你得到了数据，进入之前在文件夹打开的ubuntu终端中，使用以下格式`./make_tokenize.sh {data目录中的文件名称，包括.jsonl} {训练的回合数}`进行数据分词，一般情况下建议直接使用`./make_tokenize.sh {data目录中的文件名称，包括.jsonl}`，同等于`./make_tokenize.sh {data目录中的文件名称，包括.jsonl} 1`
+* 你可能会注意到，数据分词后会出现如`### The first ten factors of the five numbers nearby (±10):`这样的输出，下面跟着一批输出，这其实是根据此数据数量的10个值范围中推荐填入的`MICRO_BSZ`以及`EPOCH_STEPS`，使用此值可以让你在完整训练每一轮数据的同时加速训练时间（但同时也需要更多的显存），所以设置与否应该和你的显存挂钩
 * 如果你的数据条数刚好支持你显存支持的更多`MICRO_BSZ`，我推荐你尽可能多开，如果你提供的数据条数不支持你多开或者你的显存不足以开到此`MICRO_BSZ`，我推荐你找到输出的`MINI_BSZ`并且你的显存`负担的起`的数据条数，然后对数据条数进行适当的增加或者删除并再次使用命令行进行数据分词，然后根据输出的推荐值调整参数中的`MICRO_BSZ`和`EPOCH_STEPS`即可
 * 如果你的显卡甚至不支持将`MICRO_BSZ`设置为2，我推荐你依然使用输出的`MICRO_BSZ`值，找到一个较小的数值并修改`MINI_BSZ`参数，注意是设置`MINI_BSZ`参数而不是设置`MICRO_BSZ`参数，`MICRO_BSZ`设置为1即可，这样可以让训练数据的分布更均匀，所以不要设置`EPOCH_STEPS`，只是把一次性训练的数据分布到多次训练后更新梯度，所以这并不会降低训练训练时间
-* 如果你希望使用`get`模式读取数据，则应该使用`./make_tokenize.sh {data目录中的文件名称，包括.jsonl} {建议永远为1，降低数据分词消耗的时间，仅限get读取模式下推荐}`进行数据分词，并且不需要设置epoch（设置了也不会停止）
-* 在无法开启更大的`MICRO_BSZ`时，推荐开启`FLA`参数，此时`CTX_LEN`参数应该跟随分词脚本输出的`### max_length_power_of_two`项设置而不是`### max_length`，`FLA`启用时会加速`MICRO_BSZ`<=8的微调，但是要求`CTX_LEN`和`CHUNK_CTX`参数必须为n的二次幂，即，`"1024，2048，4096，8192"`等，并且启用`infctx`进行超长上下文训练时也必须开启`FLA`参数
+* 如果你希望使用`get`模式读取数据，则应该使用`./make_tokenize.sh {data目录中的文件名称，包括.jsonl}`进行数据分词，并且不需要设置epoch（设置了也不会停止）
+* 在无法开启更大的`MICRO_BSZ`时，推荐开启`FLA`参数，此时`CTX_LEN`参数应该跟随分词脚本输出的`### max_length_power_of_two`项设置而不是`### max_length`，`FLA`启用时会加速`MICRO_BSZ`<=8的微调，但是要求`CTX_LEN`和`CHUNK_CTX`参数必须为n的二次幂，即，`"512, 1024，2048，4096，8192"`等，并且启用`infctx`进行超长上下文训练时也必须开启`FLA`参数
 * 如果你无法训练数据（使用的数据token过长）你可以使用`./make_tokenize.sh {data目录中的文件名称，包括.jsonl} {训练回合数} {过滤的最大tokens}`以过滤掉超过最后一个参数设置的tokens的数据，可以降低显卡的训练负担
-* 因为是示例，现在你可以输入`./make_tokenize.sh sample.jsonl 4`进行分词测试
+* 因为是示例，现在你可以输入`./make_tokenize.sh sample.jsonl`进行分词测试
 #### 4. 调整参数
-* 你已经完成了数据分词，现在使用文本编辑器（vscode或者其他文本编辑器）打开当前目录下的`training.sh`文件，里面的所有参数设置已经使用数据标注好，你应该调整其中的参数进行训练准备，参数调整说明会在其他地方（可能是github wiki或者知乎）详细说明，这里就不再多提
+* 你已经完成了数据分词，现在使用文本编辑器（vscode或者其他文本编辑器）打开当前目录下的`training.sh`文件，里面的所有参数设置已经使用数据标注好，你应该调整其中的参数进行训练准备，`training.sh`已经设置默认值，可根据参数注释修改
 * 调整好了参数后，在Ubuntu终端中运行`./training.sh`即可开始训练，只需要等待训练回合达到你期望的回合或者loss达到你的期望值即可
 #### 5. 合并模型
-* 现在你得到了微调后的模型，lisa训练不需要这个步骤，因为它直接得到一个新的模型而不是权重合并文件，我这里只讲lora和pissa训练
+* 现在你得到了微调后的模型，state tuning训练不需要这个步骤，因为它直接得到一个state额外state挂载到模型而不是权重合并文件，我这里只讲lora和pissa，bone训练
 * 找到`merge.sh`文件并进入，调整对应训练的参数后，在Ubuntu命令行中运行`./merge.sh {训练的回合数}`如`./merge.sh 0`即可合并得到模型文件，文件存放在`/merge`文件夹内
 #### 6. 运行测试
 * 此时你已经完成了微调的所有步骤，现在只需要找到`/merge`文件夹内合并好的模型文件，放到[RWKV-Runner](https://github.com/josStorer/RWKV-Runner)或者[Ai00](https://github.com/Ai00-X/ai00_server)等RWKV推理项目中运行测试即可（这里我推荐RWKV-Runner）
