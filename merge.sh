@@ -5,8 +5,8 @@ MODEL_PATH=RWKV-x060-World-3B-v2.1-20240417-ctx4096.pth
 PISSA_EPOCH=$1
 # 训练使用的量化精度，可用参数为：none, 4bit,nf4 ,fp4 ,int8
 QUANT="int8"
-# 训练使用的微调模式，可用参数为：lora, pissa, state
-TRAIN_TYPE="pissa"
+# 训练使用的微调模式，可用参数为：lora, pissa, bone
+TRAIN_TYPE="bone"
 # LORA_ALPHA参数，仅lora微调时需要设置，其它模型模式微调时不需要对应
 LORA_ALPHA=256
 
@@ -64,32 +64,32 @@ if [ ! -d "merge" ]; then
 fi
 
 case "$QUANT" in
-"4bit"|"nf4"|"fp4"|"int8")
+"4bit"|"nf4"|"fp4"|"int8"|"fp8")
     echo "-------------使用$QUANT精度量化的$TRAIN_TYPE合并-------------"
     ;;
 "none")
     echo "-------------不使用量化的$TRAIN_TYPE合并-------------"
     ;;
 *)
-    echo "!!!!!!!!!!!!!不支持的量化精度参数$QUANT的$TRAIN_TYPE合并，仅支持none,4bit, nf4, fp4, int8!!!!!!!!!!!!!"
+    echo "!!!!!!!!!!!!!不支持的量化精度参数$QUANT的$TRAIN_TYPE合并，仅支持none,4bit, nf4, fp4, int8, fp8!!!!!!!!!!!!!"
     exit 1
     ;;
 esac
 
 case "$TRAIN_TYPE" in
-"pissa"|"lora"|"state")
+"pissa"|"lora"|"bone")
     echo "-------------使用$TRAIN_TYPE模式合并-------------"
     ;;
 *)
-    echo "!!!!!!!!!!!!!不支持的训练模式参数$TRAIN_TYPE，仅支持lora, pissa!!!!!!!!!!!!!"
+    echo "!!!!!!!!!!!!!不支持的训练模式参数$TRAIN_TYPE，仅支持lora, pissa, state_tuning, bone!!!!!!!!!!!!!"
     exit 1
     ;;
 esac
 
-if [ "$TRAIN_TYPE" = "state" ]; then
-    python3 merge/merge_state.py \
+if [ "$TRAIN_TYPE" = "bone" ]; then
+    python3 merge/merge_bone.py \
         --base_model model/$MODEL_PATH \
-        --state_checkpoint output/rwkv-$PISSA_EPOCH.pth \
+        --lora_checkpoint output/rwkv-$PISSA_EPOCH.pth \
         --output merge_model/$FILE_NAME-$OUT_TYPE-$PISSA_EPOCH.pth
 else
     python3 merge/merge.py \
