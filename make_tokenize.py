@@ -59,8 +59,10 @@ def pretty_print_dict_factors(d):
         print(f"\n{key}")
         print(f"{'MICRO_BSZ'.ljust(max_len)} = {value}")
         print(f"{'EPOCH_STEPS'.ljust(max_len)} = {list(key // value_array)}")
-# 减少文件读写，直接在内存中处理数据
-N_EPOCH = int(sys.argv[2].strip())
+if len(sys.argv) <= 2:
+    N_EPOCH = 1
+else:
+    N_EPOCH = int(sys.argv[2].strip())
 IN_FILE = sys.argv[1].strip()
 OUT_PATH = os.path.dirname(IN_FILE)
 OUT_NAME = os.path.splitext(os.path.basename(IN_FILE))[0]
@@ -201,10 +203,10 @@ print(f"{'-'*80}\n### Final {OUT_NAME}.bin/idx has {data_size} tokens, {data_len
 print(f"### append_eof = {EOF}")
 print(f"### max_length = {max_size}")
 print(f"### max_length_power_of_two = {next_power_of_two(max_size)}")
-print(f"### data_line_count = {data_length//N_EPOCH}")
+print(f"### data_line_count = {data_length}")
 # 附近5个数字的前十个个因子
-print(f"### The first ten factors of the five numbers nearby (±5):")
+print(f"### The first ten factors of the five numbers nearby (±10):")
 try:
-    pretty_print_dict_factors(find_factors_range(data_length//N_EPOCH, 5))
+    pretty_print_dict_factors(find_factors_range(data_length, 10))
 except:
     pass
