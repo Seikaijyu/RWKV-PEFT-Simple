@@ -27,3 +27,5 @@ merge_state.py
 requirements.txt
 demo-pissa.sh
 test.py
+history_run_command.sh.log
+wandb
