@@ -40,7 +40,7 @@ FLA=0
 
 # 模型路径
 # 对应的是在model文件夹下需要微调的模型的文件名
-MODEL_PATH=RWKV-x060-ChnNovel-3B-20240807-ctx4096.pth
+MODEL_PATH=RWKV-x060-World-3B-v2.1-20240417-ctx4096.pth
 
 # 数据路径
 # 对应的是在data文件夹下需要微调的使用数据的文件名
