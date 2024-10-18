@@ -18,7 +18,12 @@ FINETUNE_MODE="bone"
 #  开启时最好同时开启FLA以启用triton算子，因为cuda算子的梯度有点问题
 TRAIN_TYPE="none"
 
-# 机器学习实验跟踪平台 wandb (Weights & Biases)。
+# 机器学习实验跟踪平台 wandb (Weights & Biases)
+#
+# 可以用于查看训练的每一步loss，并且可以进行不同训练的loss对比，还有EMA（移动指数平滑）等各种图标展示功能
+# 还可以查看设定的训练参数，如需使用，需要在https://wandb.ai/注册账号，并复制key
+# 在此参数中设定wandb的名字（任意）后根据命令行提示粘贴key（命令行输入key时不显示任何内容是正常的，粘贴后直接回车即可）
+# 绑定后即可使用并在每次训练后查看数据图和远程关闭训练等操作
 WANDB=""
 
 # 训练的RWKV模型的架构版本，可选值为：v5, v6
