@@ -130,6 +130,13 @@ LR_FINAL=5e-5
 WARMUP_STEPS=0
 
 # 显卡数量
+# 
+# 此配置项大于1时DATA_SHUFFLE（数据洗牌）参数会被主动关闭，此时只能训练一回合
+# 此时应该时候此命令进行分词 `./make_tokenize.sh {data目录中的文件名称，包括.jsonl} {训练的回合数}`
+#
+# 应该遵守以下公式修改训练步数（在梯度累计和微批次大小计算好训练步数后的基础上进行计算）：
+# 训练步数/GPU数量=训练步数
+
 GPU_COUNT=1
 
 # 微批次大小，此配置项越大，显存占用越大，但是训练速度越快
@@ -156,6 +163,7 @@ EPOCH_SAVE=1
 MINI_BSZ=8
 
 # 优化策略, 可选值为：deepspeed_stage_1, deepspeed_stage_2, deepspeed_stage_3
+#
 # 建议使用deepspeed_stage_2节省显存的同时也能保证微调速度
 # deepspeed_stage_1: 完全使用显卡内存，不适用于显存较小的显卡，在显存足够的时候速度较快，使用量化微调时建议开启以加速训练
 # deepspeed_stage_2: 使用显卡内存和RAM内存，适用于显存较小的显卡，能节省显存的同时保证速度
