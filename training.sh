@@ -36,13 +36,6 @@ MODEL_VERSION="v6"
 # fp8损失更大，但是训练效率更高
 QUANT="int8"
 
-# 微调embedding层，可选值为：0（关闭）, 1（开启）
-#
-# 开启时不会冻结embedding层和head层，这两层和lora_r没有任何关系，调高也不会影响这两层的微调
-# embedding层是模型理解输入数据的基础，而head层则直接影响模型的输出
-# 但是开启后会需要更多显存，同时会增加训练时间（仅在lora和pissa微调下有效）
-EMB_FINETUNE=0
-
 # 启用triton算子，可选值为：0（关闭）, 1（开启）
 #
 # MICRO_BSZ越小越推荐开启，训练速度更快
@@ -394,30 +387,6 @@ case "$QUANT" in
     ;;
 esac
 
-if [ "$EMB_FINETUNE" = 0 ]; then
-    case "$FINETUNE_MODE" in
-    "lora"|"pissa")
-        echo "-------------不微调embedding层-------------"
-        ;;
-    *)
-        ;;
-    esac
-    EMB=""
-elif [ "$EMB_FINETUNE" = 1 ]; then
-    case "$FINETUNE_MODE" in
-    "lora"|"pissa")
-        ;;
-    *)
-        echo "!!!!!!!!!!!!!不支持的peft方法$FINETUNE_MODE，无法微调embedding层!!!!!!!!!!!!!"
-        exit 1
-        ;;
-    esac
-    echo "-------------微调embedding层-------------"
-    EMB="--emb"
-else
-    echo "!!!!!!!!!!!!!不支持的微调embedding层参数$EMB_FINETUNE，仅支持0（关闭）, 1（开启）!!!!!!!!!!!!!"
-    exit 1
-fi
 
 
 if [ "$FLA" = 0 ]; then
@@ -462,7 +431,7 @@ elif [ "$FINETUNE_MODE" = "lora" ]; then
     --accelerator gpu --devices ${GPU_COUNT} --precision ${PRECISION} --strategy ${DEEPSPEED_STRATEGY} --grad_cp ${GRAD_CP} \
     --accumulate_grad_batches ${MINI_BSZ} --dataload ${DATALOAD} --chunk_ctx ${CHUNK_CTX} --data_shuffle ${DATA_SHUFFLE} \
     --peft lora --lora_config '${lora_config}' \
-    --wandb \"${WANDB}\" --quant ${QUANT} --loss_mask ${LOSS_MASK} ${INFCTX} ${V6_TRAIN} ${EMB} ${FLA}"
+    --wandb \"${WANDB}\" --quant ${QUANT} --loss_mask ${LOSS_MASK} ${INFCTX} ${V6_TRAIN} ${FLA}"
 elif [ "$FINETUNE_MODE" = "bone" ]; then
     printf -v bone_config '{"bone_load":"%s","bone_r":%s}' "$bone_load" "$bone_b"
    COMMAND="python3 train.py --load_model 'model/${MODEL_PATH}' \
@@ -485,7 +454,7 @@ elif [ "$FINETUNE_MODE" = "pissa" ]; then
     --accelerator gpu --devices ${GPU_COUNT} --precision ${PRECISION} --strategy ${DEEPSPEED_STRATEGY} --grad_cp ${GRAD_CP} \
     --accumulate_grad_batches ${MINI_BSZ} --dataload ${DATALOAD} --chunk_ctx ${CHUNK_CTX} --data_shuffle ${DATA_SHUFFLE} \
     --peft pissa --pissa_config '${pissa_config}' \
-    --wandb \"${WANDB}\" --quant ${QUANT} --loss_mask ${LOSS_MASK} ${INFCTX} ${V6_TRAIN} ${EMB} ${FLA}"
+    --wandb \"${WANDB}\" --quant ${QUANT} --loss_mask ${LOSS_MASK} ${INFCTX} ${V6_TRAIN} ${FLA}"
 else
     echo "!!!!!!!!!!!!!不支持的微调模式$FINETUNE_MODE，仅支持state_tuning, lora, pissa, bone!!!!!!!!!!!!!"
     exit 1
