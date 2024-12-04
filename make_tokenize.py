@@ -46,7 +46,7 @@ def find_factors_range(n, range_):
     def find_factors(n):
         factors = [i for i in range(2, math.isqrt(n) + 1) if n % i == 0]
         factors += [n // i for i in factors if n // i != i]
-        return sorted(factors)[:10] if factors else [n]
+        return sorted(factors)[:20] if factors else [n]
 
     return {i: find_factors(i) for i in range(n - range_, n + range_ + 1)}
 

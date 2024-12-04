@@ -3,6 +3,10 @@ merge_pissa.*
 
 /cuda
 /src
+/web
+/json2binidx_tool
+/assert
+/scripts
 
 /data/*
 /merge/*
@@ -29,3 +33,5 @@ demo-pissa.sh
 test.py
 history_run_command.sh.log
 wandb
+开启碎片清理.txt
+mask_test.ipynb

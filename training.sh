@@ -24,7 +24,7 @@ TRAIN_TYPE="none"
 # 还可以查看设定的训练参数，如需使用，需要在https://wandb.ai/注册账号，并复制key
 # 在此参数中设定wandb的名字（任意）后根据命令行提示粘贴key（命令行输入key时不显示任何内容是正常的，粘贴后直接回车即可）
 # 绑定后即可使用并在每次训练后查看数据图和远程关闭训练等操作
-WANDB=""
+WANDB="wandb"
 
 # 训练的RWKV模型的架构版本，可选值为：v5, v6
 MODEL_VERSION="v6"
@@ -44,17 +44,17 @@ FLA=0
 # 模型路径
 #
 # 对应的是在model文件夹下需要微调的模型的文件名
-MODEL_PATH=RWKV-x060-World-3B-v2.1-20240417-ctx4096.pth
+MODEL_PATH=RWKV-x060-ChnNovel-1B-20240807-ctx4096.pth
 
 # 数据路径
 #
 # 对应的是在data文件夹下需要微调的使用数据的文件名
-DATA_PATH=sample
+DATA_PATH=gpt4o-0806-Instruct
 
 # 训练的回合数，达到回合数后会停止训练
 #
 # 仅在数据读取模式为pad和only时生效
-EPOCH_COUNT=5
+EPOCH_COUNT=2
 
 # 训练数据自动洗牌，从第一个epoch开始打乱训练数据排列
 #
@@ -67,7 +67,7 @@ DATA_SHUFFLE=1
 
 # 回合步数
 # 应该根据训练数据的条数和微批次大小调整，公式为：数据集条数/微批次大小=回合步数
-EPOCH_STEPS=16
+EPOCH_STEPS=4448
 
 # loss掩码，可选值为：none, pad, qa, se
 #
@@ -90,7 +90,7 @@ LOSS_MASK="qa"
 # 其中208就是数据中最长的数据的长度，在pad模式和only模式中，应该填入此数值以保证数据能够完全被训练
 # 如果数据过长无法训练，建议降低上下文长度并使用get模式读取数据，可以节省资源
 # 使用./make_tokenize.sh {数据集名称}.jsonl 1 进行数据分词即可
-CTX_LEN=601
+CTX_LEN=6300
 
 # 开启微调附加项的infctx参数后启用的设置，此设置用于确定在infctx中单次训练的上下文长度，此参数越高，消耗的显存越多
 #
@@ -120,7 +120,7 @@ LR_FINAL=5e-5
 # 然后在训练过程中基于设定的预热步数训练到指定的实际步数，计算公式为：实际步数=梯度累计x训练步数
 # 此时lr将为初始学习率，然后再从初始学习率开始逐渐迭代到最终学习率
 # 开启时建议严格控制训练步数和回合数，以达到最优效果，模型尺寸越大预热步数应当越多
-WARMUP_STEPS=0
+WARMUP_STEPS=20
 
 # 显卡数量
 # 
@@ -129,7 +129,6 @@ WARMUP_STEPS=0
 #
 # 应该遵守以下公式修改训练步数（在梯度累计和微批次大小计算好训练步数后的基础上进行计算）：
 # 训练步数/GPU数量=训练步数
-
 GPU_COUNT=1
 
 # 微批次大小，此配置项越大，显存占用越大，但是训练速度越快
@@ -191,7 +190,7 @@ VOCAB_SIZE=65536
 # 3B EMBD_SIZE = 2560
 # 1.5B、1.6B、0.43B EMBD_SIZE = 2048
 # 0.17B EMBD_SIZE = 768
-EMBD_SIZE=2560
+EMBD_SIZE=2048
 
 # 嵌入层
 #
@@ -201,16 +200,16 @@ EMBD_SIZE=2560
 # 3B N_LAYER = 32 
 # 1.5B、1.6B、0.43B N_LAYER = 24 
 # 0.17B  N_LAYER = 12
-N_LAYER=32
+N_LAYER=24
 
 # Bata1
 BETA1=0.9
 
 # Bata2
-BETA2=0.999
+BETA2=0.95
 
 # ADAM epsilon
-ADAM_EPS=1e-8
+ADAM_EPS=1e-18
 
 # ------------------LoRA设置参数----------------------
 
@@ -278,6 +277,7 @@ bone_load=""
 # Bone的b值
 #
 # 类似lora的r，bone_b=128相当于lora_r=64的占用，越大的值微调的参数量越多
+# bone_b必须能被维度整除
 bone_b=128
 
 
@@ -433,7 +433,7 @@ elif [ "$FINETUNE_MODE" = "lora" ]; then
     --peft lora --lora_config '${lora_config}' \
     --wandb \"${WANDB}\" --quant ${QUANT} --loss_mask ${LOSS_MASK} ${INFCTX} ${V6_TRAIN} ${FLA}"
 elif [ "$FINETUNE_MODE" = "bone" ]; then
-    printf -v bone_config '{"bone_load":"%s","bone_r":%s}' "$bone_load" "$bone_b"
+    printf -v bone_config '{"bone_mode":"bone","bone_load":"%s","bone_r":%s}' "$bone_load" "$bone_b"
    COMMAND="python3 train.py --load_model 'model/${MODEL_PATH}' \
     --proj_dir 'output' --data_file 'data/${DATA_PATH}' \
     --data_type binidx --vocab_size ${VOCAB_SIZE} \
