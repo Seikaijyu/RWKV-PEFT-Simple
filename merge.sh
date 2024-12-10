@@ -1,10 +1,10 @@
 # 模型路径
-MODEL_PATH=RWKV-x060-ChnNovel-1B-20240807-ctx4096.pth
+MODEL_PATH=RWKV-x060-World-7B-v3-20241112-ctx4096.pth
 # 训练回合数，由命令行传入，具体微调回复数可以查看output目录下的文件，例如：rwkv-7.pth表示微调7回合后的模型
 # 使用方式：./merge.sh {微调的回合数量}
 PISSA_EPOCH=$1
 # 训练使用的量化精度，可用参数为：none, 4bit,nf4 ,fp4 ,int8
-QUANT="int8"
+QUANT="none"
 # 训练使用的微调模式，可用参数为：lora, pissa, bone
 TRAIN_TYPE="bone"
 # LORA_ALPHA参数，仅lora微调时需要设置，其它模型模式微调时不需要对应
@@ -88,6 +88,7 @@ esac
 
 if [ "$TRAIN_TYPE" = "bone" ]; then
     python3 merge/merge_bone.py \
+        --quant $QUANT \
         --base_model model/$MODEL_PATH \
         --lora_checkpoint output/rwkv-$PISSA_EPOCH.pth \
         --output merge_model/$FILE_NAME-$OUT_TYPE-$PISSA_EPOCH.pth
