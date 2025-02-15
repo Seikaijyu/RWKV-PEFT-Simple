@@ -7,6 +7,7 @@ merge_pissa.*
 /json2binidx_tool
 /assert
 /scripts
+/rwkvt
 
 /data/*
 /merge/*
@@ -17,7 +18,7 @@ merge_pissa.*
 !/output/.gitkeep
 filter.exe
 train.py
-
+src_train.py
 merge.py
 
 __pycache__

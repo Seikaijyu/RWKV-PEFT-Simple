@@ -1,4 +1,4 @@
-## 依赖项目[RWKV-PEFT](https://github.com/Seikaijyu/RWKV-PEFT)更新到了`5e57b75`（2024/10/18）版本，此版本的`requirements.txt`已经完善，可以一键安装环境，并且删除了LISA微调支持，添加了更好的Bone微调方法（loss更好拟合，效果优于PiSSA），修复了众多bug，可参考`training.sh`默认设置尝试使用bone微调。
+## 依赖项目[RWKV-PEFT](https://github.com/Seikaijyu/RWKV-PEFT)更新到了`ebde10e`（2025/2/14）版本，此版本完全支持RWKV7微调，同时允许修改学习率衰减模式
 ---
 # RWKV-PEFT-Simple
 

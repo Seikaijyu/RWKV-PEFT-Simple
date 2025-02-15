@@ -3,7 +3,7 @@ import json, random, sys, os
 import numpy as np
 from tokenizer.rwkv_tokenizer import TRIE_TOKENIZER
 tokenizer = TRIE_TOKENIZER("tokenizer/rwkv_vocab_v20230424.txt")
-from src.binidx import MMapIndexedDataset
+from rwkvt.dataset.binidx import MMapIndexedDataset
 import math
 
 """
@@ -30,6 +30,18 @@ bb/aa/dd/cc/dd/aa/bb/cc/dd/bb/cc/aa/
 
 其中数据重复了3次 (每次都有不同的洗牌)
 """
+# 确保数值为16的倍数
+def align_to_16(n):
+    """
+    将输入的整数向上对齐到16的倍数
+    
+    Args:
+        n: 输入的整数
+        
+    Returns:
+        返回大于等于输入值的最小16的倍数
+    """
+    return (n + 15) & ~15
 # 获取2的次幂
 def next_power_of_two(n):
     if n < 1:
@@ -201,7 +213,7 @@ print(f"{'-'*80}\n### Final {OUT_NAME}.bin/idx has {data_size} tokens, {data_len
 #                 print(f"\n### magic_prime = {i} (for ctxlen {CTX_LEN})\n")
 #                 break
 print(f"### append_eof = {EOF}")
-print(f"### max_length = {max_size}")
+print(f"### max_length = {align_to_16(max_size)}")
 print(f"### max_length_power_of_two = {next_power_of_two(max_size)}")
 print(f"### data_line_count = {data_length}")
 # 附近5个数字的前十个个因子

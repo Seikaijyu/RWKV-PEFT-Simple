@@ -1,5 +1,5 @@
 # 模型路径
-MODEL_PATH=RWKV-x060-World-7B-v3-20241112-ctx4096.pth
+MODEL_PATH=RWKV-x070-World-0.4B-v2.9-20250107-ctx4096.pth
 # 训练回合数，由命令行传入，具体微调回复数可以查看output目录下的文件，例如：rwkv-7.pth表示微调7回合后的模型
 # 使用方式：./merge.sh {微调的回合数量}
 PISSA_EPOCH=$1
@@ -88,17 +88,17 @@ esac
 
 if [ "$TRAIN_TYPE" = "bone" ]; then
     python3 merge/merge_bone.py \
-        --quant $QUANT \
-        --base_model model/$MODEL_PATH \
-        --lora_checkpoint output/rwkv-$PISSA_EPOCH.pth \
-        --output merge_model/$FILE_NAME-$OUT_TYPE-$PISSA_EPOCH.pth
+        --quant "$QUANT" \
+        --base_model "model/$MODEL_PATH" \
+        --lora_checkpoint "output/rwkv-$PISSA_EPOCH.pth" \
+        --output "merge_model/$FILE_NAME-$OUT_TYPE-$PISSA_EPOCH.pth"
 else
     python3 merge/merge.py \
-        --quant $QUANT \
-        --lora_alpha $LORA_ALPHA \
-        --type $TRAIN_TYPE \
-        --base_model model/$MODEL_PATH \
-        --lora_init output/init_pissa.pth \
-        --lora_checkpoint output/rwkv-$PISSA_EPOCH.pth \
-        --output merge_model/$FILE_NAME-$OUT_TYPE-$PISSA_EPOCH.pth
+        --quant "$QUANT" \
+        --lora_alpha "$LORA_ALPHA" \
+        --type "$TRAIN_TYPE" \
+        --base_model "model/$MODEL_PATH" \
+        --lora_init "output/init_pissa.pth" \
+        --lora_checkpoint "output/rwkv-$PISSA_EPOCH.pth" \
+        --output "merge_model/$FILE_NAME-$OUT_TYPE-$PISSA_EPOCH.pth"
 fi
