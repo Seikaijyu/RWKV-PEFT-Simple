@@ -1,4 +1,4 @@
-## 依赖项目[RWKV-PEFT](https://github.com/Seikaijyu/RWKV-PEFT)更新到了`ebde10e`（2025/2/14）版本，此版本完全支持RWKV7微调，同时允许修改学习率衰减模式
+## 依赖项目[RWKV-PEFT](https://github.com/Seikaijyu/RWKV-PEFT)更新到了`15693e5`（2025/5/2）版本，此版本完全支持RWKV7微调，同时允许修改学习率衰减模式（衰减模式已修复）
 ---
 # RWKV-PEFT-Simple
 

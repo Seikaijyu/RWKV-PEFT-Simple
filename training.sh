@@ -45,17 +45,17 @@ OP="cuda"
 # 模型路径
 #
 # 对应的是在model文件夹下需要微调的模型的文件名
-MODEL_PATH=RWKV-x070-World-0.4B-v2.9-20250107-ctx4096.pth
+MODEL_PATH=rwkv7-g1-1.5b-20250429-ctx4096.pth
 
 # 数据路径
 #
 # 对应的是在data文件夹下需要微调的使用数据的文件名
-DATA_PATH=b
+DATA_PATH=neko-ua
 
 # 训练的回合数，达到回合数后会停止训练
 #
 # 仅在数据读取模式为pad和only时生效
-EPOCH_COUNT=10
+EPOCH_COUNT=1
 
 # 训练数据自动洗牌，从第一个epoch开始打乱训练数据排列
 #
@@ -68,7 +68,7 @@ DATA_SHUFFLE=1
 
 # 回合步数
 # 应该根据训练数据的条数和微批次大小调整，公式为：数据集条数/微批次大小=回合步数
-EPOCH_STEPS=3280
+EPOCH_STEPS=6192
 
 # loss掩码，可选值为：none, pad, qa, se
 #
@@ -91,7 +91,7 @@ LOSS_MASK="qa"
 # 其中208就是数据中最长的数据的长度，在pad模式和only模式中，应该填入此数值以保证数据能够完全被训练
 # 如果数据过长无法训练，建议降低上下文长度并使用get模式读取数据，可以节省资源
 # 使用./make_tokenize.sh {数据集名称}.jsonl 1 进行数据分词即可
-CTX_LEN=7872
+CTX_LEN=9872
 
 # 开启微调附加项的infctx参数后启用的设置，此设置用于确定在infctx中单次训练的上下文长度，此参数越高，消耗的显存越多
 #
@@ -105,7 +105,7 @@ PRECISION=bf16
 # 初始学习率
 #
 # 如果使用state模式微调，lr最好调高，建议使用动态学习率，从1到0.01，使用其它模式建议5e-5到1e-4之间，优先选择5e-5
-LR_INIT=5e-5
+LR_INIT=1e-4
 
 # 最终学习率
 #
@@ -209,8 +209,10 @@ VOCAB_SIZE=65536
 # 0.17B EMBD_SIZE = 768
 
 # v7
+# 3B EMBD_SIZE = 2560
+# 1.5B EMBD_SIZE = 2048
 # 0.4B EMBD_SIZE = 1024
-EMBD_SIZE=1024
+EMBD_SIZE=2048
 
 # 嵌入层
 #
@@ -223,6 +225,8 @@ EMBD_SIZE=1024
 # 0.17B  N_LAYER = 12
 
 # v7
+# 3B N_LAYER = 32
+# 1.5B N_LAYER = 24
 # 0.4B N_LAYER = 24
 N_LAYER=24
 
@@ -302,7 +306,7 @@ disha_load=""
 #
 # 类似lora的r，disha_r=128相当于lora_r=64的占用，越大的值微调的参数量越多
 # disha_r必须能被维度整除
-disha_r=1024
+disha_r=128
 
 
 

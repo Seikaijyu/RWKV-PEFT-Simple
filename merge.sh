@@ -1,12 +1,12 @@
 # 模型路径
-MODEL_PATH=RWKV-x070-World-0.4B-v2.9-20250107-ctx4096.pth
+MODEL_PATH=rwkv7-g1-1.5b-20250429-ctx4096.pth
 # 训练回合数，由命令行传入，具体微调回复数可以查看output目录下的文件，例如：rwkv-7.pth表示微调7回合后的模型
 # 使用方式：./merge.sh {微调的回合数量}
 PISSA_EPOCH=$1
 # 训练使用的量化精度，可用参数为：none, 4bit,nf4 ,fp4 ,int8
 QUANT="none"
-# 训练使用的微调模式，可用参数为：lora, pissa, bone
-TRAIN_TYPE="bone"
+# 训练使用的微调模式，可用参数为：lora, pissa, disha
+TRAIN_TYPE="disha"
 # LORA_ALPHA参数，仅lora微调时需要设置，其它模型模式微调时不需要对应
 LORA_ALPHA=256
 
@@ -77,20 +77,20 @@ case "$QUANT" in
 esac
 
 case "$TRAIN_TYPE" in
-"pissa"|"lora"|"bone")
+"pissa"|"lora"|"disha")
     echo "-------------使用$TRAIN_TYPE模式合并-------------"
     ;;
 *)
-    echo "!!!!!!!!!!!!!不支持的训练模式参数$TRAIN_TYPE，仅支持lora, pissa, state_tuning, bone!!!!!!!!!!!!!"
+    echo "!!!!!!!!!!!!!不支持的训练模式参数$TRAIN_TYPE，仅支持lora, pissa, state_tuning, disha!!!!!!!!!!!!!"
     exit 1
     ;;
 esac
 
-if [ "$TRAIN_TYPE" = "bone" ]; then
-    python3 merge/merge_bone.py \
+if [ "$TRAIN_TYPE" = "disha" ]; then
+    python3 merge/merge_disha.py \
         --quant "$QUANT" \
         --base_model "model/$MODEL_PATH" \
-        --lora_checkpoint "output/rwkv-$PISSA_EPOCH.pth" \
+        --peft_checkpoint "output/rwkv-$PISSA_EPOCH.pth" \
         --output "merge_model/$FILE_NAME-$OUT_TYPE-$PISSA_EPOCH.pth"
 else
     python3 merge/merge.py \
