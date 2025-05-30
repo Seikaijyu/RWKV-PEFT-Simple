@@ -1,7 +1,8 @@
 ## 依赖项目[RWKV-PEFT](https://github.com/Seikaijyu/RWKV-PEFT)更新到了`15693e5`（2025/5/2）版本，此版本完全支持RWKV7微调，同时允许修改学习率衰减模式（衰减模式已修复）
-## 依赖项目RWKV-PEFT现在需要`torch>=2.5.1`（同时别忘了安装GPU版本，如`2.5.1+cu121`）
+## 现在，你每次运行的微调脚本将被记录在`history_run_command.sh.log`文件中。嗯......或许可以在遇到有关RWKV-PEFT的问题时把`history_run_command.sh.log`文件中使用的脚本参数作为证据提供给J.L，或者在RWKV-PEFT项目开一个issue后把参数作为证据提供给J.L，谁知道呢~
+## 依赖项目RWKV-PEFT现在需要`torch>=2.5.1`（同时别忘了安装GPU版本，如`2.5.1+cu121`，使用`pip install torch==2.5.1+cu121 --index-url https://download.pytorch.org/whl/cu12`安装，如果你需要此版本的话）
 ## 为gpu服务器微调者提供了一个快捷环境安装脚本`gpu_server_installer.sh`，可以一键安装环境（包括wandb），不过模型和数据集还是要自己下载和安装
-## 提供了更多参数设置和使用的例子，查看`training_disha_example.sh`和`training_state_tuning_example.sh`文件以确定如何使用`RWKV-PEFT-Simple`为你带来便捷！祝微调顺利 ~
+## 提供了更多参数设置和使用的例子，查看`training_disha_example.sh`和`training_state_tuning_example.sh`文件以确定如何使用`RWKV-PEFT-Simple`为你带来便捷！祝微调顺利~
 ---
 # RWKV-PEFT-Simple
 
