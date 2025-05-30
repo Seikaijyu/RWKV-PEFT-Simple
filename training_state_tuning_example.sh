@@ -1,4 +1,4 @@
-# 使用方式：调整参数后使用`./training.sh`运行
+# 使用方式：仅做state_tuning微调的示例的参数展示脚本，无法运行
 
 # ------------------通用参数----------------------
 # 微调方式，可选值为：lora, pissa，bone, state_tuning
@@ -9,7 +9,7 @@
 # bat: 与bone类似，区别在于bat会让模型学到更多的特征，但是训练速度较慢，效果更好
 # state_tuning: 微调init state，微调速度更快，占用显存更低。
 #   此微调不会让模型学到没有在预训练中学过的数据，如有需要请使用其它微调方式。
-FINETUNE_MODE="bone"
+FINETUNE_MODE="state_tuning"
 
 # 微调附加类型，可选值为：none, infctx
 #
@@ -42,7 +42,7 @@ QUANT="none"
 # 启用其它算子，可选值为：cuda, fla, triton（v7可用）
 #
 # 如需进行state_tuning微调，必须使用fla算子，否则建议使用cuda算子（前提是你的显卡是NVIDIA的）
-OP="cuda"
+OP="fla"
 
 # 模型路径
 #
@@ -109,15 +109,14 @@ EPOCH_SAVE=1
 
 # 初始学习率
 #
-# 如果使用state模式微调，lr最好调高，建议使用动态学习率，从1到0.01，使用其它模式建议8e-5到1e-5之间
-# 优先选择2e-5到3e-5之间的范围作为初始学习率
-LR_INIT=2e-5
+# 如果使用state模式微调，lr最好调高，建议使用动态学习率，从1到0.01，使用其它模式建议5e-5到1e-4之间，优先选择5e-5
+LR_INIT=1
 
 # 最终学习率
 #
 # 通常建议和初始学习率一致，除非需要动态学习率
 # 动态学习率的下降速度与你设定的训练回合数和训练步数有关
-LR_FINAL=2e-5
+LR_FINAL=0.01
 
 # 学习率衰减策略，可选值为：cos, wsd
 #
@@ -340,221 +339,3 @@ disha_load=""
 # 除非你的微调场景非常特殊，甚至模型根本没见过，否则不建议使用更大的值
 # disha_r必须能被维度整除
 disha_r=128
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# ---------------------源代码---------------------
-case "$MODEL_VERSION" in
-"v7")
-    echo "-------------RWKV7微调模式-------------"
-    TRAIN_VERSION="--my_testing x070"
-    ;;
-"v6")
-    echo "-------------RWKV6微调模式-------------"
-    TRAIN_VERSION="--my_testing x060"
-    ;;
-"v5")
-    echo "-------------RWKV5微调模式-------------"
-    TRAIN_VERSION=""
-    ;;
-*)
-    echo "!!!!!!!!!!!!!不支持的模型版本$MODEL_VERSION，仅支持v5, v6，另外v4已经过时，不建议使用!!!!!!!!!!!!!"
-    exit 1
-    ;;
-esac
-
-INFCTX=""
-case "$TRAIN_TYPE" in
-"infctx")
-    if [ "$FINETUNE_MODE" = "state_tuning" ]; then
-        echo "!!!!!!!!!!!!!state_tuning不支持的附加微调模式$TRAIN_TYPE!!!!!!!!!!!!!"
-        exit 1
-    fi
-    echo "-------------使用$TRAIN_TYPE附加模式微调-------------"
-    INFCTX="--train_type infctx"
-    ;;
-"none")
-    ;;
-*)
-    echo "!!!!!!!!!!!!!不支持的附加微调模式$TRAIN_TYPE，仅支持none, infctx!!!!!!!!!!!!!"
-    exit 1
-    ;;
-esac
-
-
-case "$LOSS_MASK" in
-    "qa"|"pad"|"se")
-        echo "-------------使用$LOSS_MASK模式-------------"
-        ;;
-"none")
-    ;;
-*)
-    echo "!!!!!!!!!!!!!不支持的loss掩码参数$LOSS_MASK，仅支持none, qa, pad, se!!!!!!!!!!!!!"
-    exit 1
-    ;;
-esac
-
-case "$QUANT" in
-"4bit"|"nf4"|"fp4"|"int8"|"fp8")
-    echo "-------------使用$QUANT精度量化微调-------------"
-    ;;
-"none")
-    echo "-------------不使用量化微调-------------"
-    ;;
-*)
-    echo "!!!!!!!!!!!!!不支持的量化精度参数$QUANT，仅支持none, 4bit, nf4, fp4, int8, fp8!!!!!!!!!!!!!"
-    exit 1
-    ;;
-esac
-
-
-
-if [ "$OP" = "cuda" ]; then
-    echo "-------------使用cuda算子-------------"
-elif [ "$OP" = "fla" ]; then
-    echo "-------------使用fla算子-------------"
-elif [ "$OP" = "triton" ]; then
-    echo "-------------使用triton算子-------------"
-else
-    echo "!!!!!!!!!!!!!不支持的OP参数$OP，仅支持cuda, fla, triton（v7可用）!!!!!!!!!!!!!"
-    exit 1
-fi
-
-case "$LR_SCHEDULE" in
-"cos"|"wsd")
-    echo "-------------使用$LR_SCHEDULE学习率衰减策略-------------"
-    ;;
-*)
-    echo "!!!!!!!!!!!!!不支持的学习率衰减策略参数$LR_SCHEDULE，仅支持cos, wsd!!!!!!!!!!!!!"
-    exit 1
-    ;;
-esac
-
-case "$DATALOAD" in
-"pad"|"get"|"only")
-    echo "-------------使用$DATALOAD模式读取数据-------------"
-    ;;
-*)
-    echo "!!!!!!!!!!!!!不支持的数据集获取参数$DATALOAD，仅支持pad, get, only!!!!!!!!!!!!!"
-    exit 1
-    ;;
-esac
-
-if [ "$FINETUNE_MODE" = "state_tuning" ]; then
-   COMMAND="python3 train.py --load_model 'model/${MODEL_PATH}' \
-    --proj_dir 'output' --data_file 'data/${DATA_PATH}' \
-    --data_type binidx --vocab_size ${VOCAB_SIZE} \
-    --ctx_len ${CTX_LEN} --epoch_steps ${EPOCH_STEPS} --epoch_count ${EPOCH_COUNT} --epoch_begin ${EPOCH_BEGIN} --epoch_save ${EPOCH_SAVE} --micro_bsz ${MICRO_BSZ} \
-    --n_layer ${N_LAYER} --n_embd ${EMBD_SIZE} \
-    --lr_init ${LR_INIT} --lr_final ${LR_FINAL} --warmup_steps ${WARMUP_STEPS} --beta1 ${BETA1} --beta2 ${BETA2} --adam_eps ${ADAM_EPS} \
-    --accelerator gpu --devices ${GPU_COUNT} --precision ${PRECISION} --strategy ${DEEPSPEED_STRATEGY} --grad_cp ${GRAD_CP} \
-    --accumulate_grad_batches ${MINI_BSZ} --dataload ${DATALOAD} --chunk_ctx ${CHUNK_CTX} --data_shuffle ${DATA_SHUFFLE} \
-    --quant ${QUANT} --loss_mask ${LOSS_MASK} --train_type 'state' --op ${OP} --lr_schedule ${LR_SCHEDULE}\
-    --wandb \"${WANDB}\" ${INFCTX} ${TRAIN_VERSION}"
-    echo "-------------使用StateTuning方法微调-------------"
-elif [ "$FINETUNE_MODE" = "lora" ]; then
-    printf -v lora_config '{"lora_load":"%s","lora_r":%s,"lora_alpha":%s,"lora_dropout":%s}' "$lora_load" "$lora_r" "$lora_alpha" "$lora_dropout"
-   COMMAND="python3 train.py --load_model 'model/${MODEL_PATH}' \
-    --proj_dir 'output' --data_file 'data/${DATA_PATH}' \
-    --data_type binidx --vocab_size ${VOCAB_SIZE} \
-    --ctx_len ${CTX_LEN} --epoch_steps ${EPOCH_STEPS} --epoch_count ${EPOCH_COUNT} --epoch_begin ${EPOCH_BEGIN} --epoch_save ${EPOCH_SAVE} --micro_bsz ${MICRO_BSZ} \
-    --n_layer ${N_LAYER} --n_embd ${EMBD_SIZE} \
-    --lr_init ${LR_INIT} --lr_final ${LR_FINAL} --warmup_steps ${WARMUP_STEPS} --beta1 ${BETA1} --beta2 ${BETA2} --adam_eps 1e-8 \
-    --accelerator gpu --devices ${GPU_COUNT} --precision ${PRECISION} --strategy ${DEEPSPEED_STRATEGY} --grad_cp ${GRAD_CP} \
-    --accumulate_grad_batches ${MINI_BSZ} --dataload ${DATALOAD} --chunk_ctx ${CHUNK_CTX} --data_shuffle ${DATA_SHUFFLE} \
-    --peft lora --lora_config '${lora_config}' \
-    --wandb \"${WANDB}\" --quant ${QUANT} --loss_mask ${LOSS_MASK} ${INFCTX} ${TRAIN_VERSION} --op ${OP} --lr_schedule ${LR_SCHEDULE}"
-    echo "-------------使用LoRA方法微调-------------"
-elif [ "$FINETUNE_MODE" = "bone" ]; then
-    printf -v disha_config '{"mode":"bone","load":"%s","r":%s}' "$disha_load" "$disha_r"
-   COMMAND="python3 train.py --load_model 'model/${MODEL_PATH}' \
-    --proj_dir 'output' --data_file 'data/${DATA_PATH}' \
-    --data_type binidx --vocab_size ${VOCAB_SIZE} \
-    --ctx_len ${CTX_LEN} --epoch_steps ${EPOCH_STEPS} --epoch_count ${EPOCH_COUNT} --epoch_begin ${EPOCH_BEGIN} --epoch_save ${EPOCH_SAVE} --micro_bsz ${MICRO_BSZ} \
-    --n_layer ${N_LAYER} --n_embd ${EMBD_SIZE} \
-    --lr_init ${LR_INIT} --lr_final ${LR_FINAL} --warmup_steps ${WARMUP_STEPS} --beta1 ${BETA1} --beta2 ${BETA2} --adam_eps ${ADAM_EPS} \
-    --accelerator gpu --devices ${GPU_COUNT} --precision ${PRECISION} --strategy ${DEEPSPEED_STRATEGY} --grad_cp ${GRAD_CP} \
-    --accumulate_grad_batches ${MINI_BSZ} --dataload ${DATALOAD} --chunk_ctx ${CHUNK_CTX} --data_shuffle ${DATA_SHUFFLE} \
-    --wandb \"${WANDB}\" --quant ${QUANT} --peft disha --disha_config '${disha_config}' --loss_mask ${LOSS_MASK}  --op ${OP} --lr_schedule ${LR_SCHEDULE} ${INFCTX} ${TRAIN_VERSION} ${EMB}"
-    echo "-------------使用Bone方法微调-------------"
-elif [ "$FINETUNE_MODE" = "bat" ]; then
-    printf -v disha_config '{"mode":"bat","load":"%s","r":%s}' "$disha_load" "$disha_r"
-   COMMAND="python3 train.py --load_model 'model/${MODEL_PATH}' \
-    --proj_dir 'output' --data_file 'data/${DATA_PATH}' \
-    --data_type binidx --vocab_size ${VOCAB_SIZE} \
-    --ctx_len ${CTX_LEN} --epoch_steps ${EPOCH_STEPS} --epoch_count ${EPOCH_COUNT} --epoch_begin ${EPOCH_BEGIN} --epoch_save ${EPOCH_SAVE} --micro_bsz ${MICRO_BSZ} \
-    --n_layer ${N_LAYER} --n_embd ${EMBD_SIZE} \
-    --lr_init ${LR_INIT} --lr_final ${LR_FINAL} --warmup_steps ${WARMUP_STEPS} --beta1 ${BETA1} --beta2 ${BETA2} --adam_eps ${ADAM_EPS} \
-    --accelerator gpu --devices ${GPU_COUNT} --precision ${PRECISION} --strategy ${DEEPSPEED_STRATEGY} --grad_cp ${GRAD_CP} \
-    --accumulate_grad_batches ${MINI_BSZ} --dataload ${DATALOAD} --chunk_ctx ${CHUNK_CTX} --data_shuffle ${DATA_SHUFFLE} \
-    --wandb \"${WANDB}\" --quant ${QUANT} --peft disha --disha_config '${disha_config}' --loss_mask ${LOSS_MASK}  --op ${OP}  --lr_schedule ${LR_SCHEDULE} ${INFCTX} ${TRAIN_VERSION} ${EMB}"
-    echo "-------------使用Bat方法微调-------------"
-elif [ "$FINETUNE_MODE" = "pissa" ]; then
-    printf -v pissa_config '{"pissa_load":"%s","pissa_init":"%s","pissa_r":%s,"svd_niter":%s}' "$pissa_load" "$pissa_init" "$pissa_r" "$svd_niter"
-   COMMAND="python3 train.py --load_model 'model/${MODEL_PATH}' \
-    --proj_dir 'output' --data_file 'data/${DATA_PATH}' \
-    --data_type binidx --vocab_size ${VOCAB_SIZE} \
-    --ctx_len ${CTX_LEN} --epoch_steps ${EPOCH_STEPS} --epoch_count ${EPOCH_COUNT} --epoch_begin ${EPOCH_BEGIN} --epoch_save ${EPOCH_SAVE} --micro_bsz ${MICRO_BSZ} \
-    --n_layer ${N_LAYER} --n_embd ${EMBD_SIZE} \
-    --lr_init ${LR_INIT} --lr_final ${LR_FINAL} --warmup_steps ${WARMUP_STEPS} --beta1 ${BETA1} --beta2 ${BETA2} --adam_eps ${ADAM_EPS} \
-    --accelerator gpu --devices ${GPU_COUNT} --precision ${PRECISION} --strategy ${DEEPSPEED_STRATEGY} --grad_cp ${GRAD_CP} \
-    --accumulate_grad_batches ${MINI_BSZ} --dataload ${DATALOAD} --chunk_ctx ${CHUNK_CTX} --data_shuffle ${DATA_SHUFFLE} \
-    --peft pissa --pissa_config '${pissa_config}' \
-    --wandb \"${WANDB}\" --quant ${QUANT} --loss_mask ${LOSS_MASK} --op ${OP} --lr_schedule ${LR_SCHEDULE} ${INFCTX} ${TRAIN_VERSION}"
-    echo "-------------使用PiSSA方法微调-------------"
-else
-    echo "!!!!!!!!!!!!!不支持的微调方法$FINETUNE_MODE，仅支持state_tuning, lora, pissa, bone, bat!!!!!!!!!!!!!"
-    exit 1
-fi
-CURRENT_DATE_TIME=$(date +"%Y-%m-%d %H:%M:%S")
-echo "# $CURRENT_DATE_TIME" >> history_run_command.sh.log
-echo "$COMMAND" >> history_run_command.sh.log
-echo "" >> history_run_command.sh.log
-eval "$COMMAND" 
