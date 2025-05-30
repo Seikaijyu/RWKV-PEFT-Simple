@@ -3,7 +3,7 @@
 #### 不管怎么样，推荐点此下载fork的[RWKV-PEFT](https://github.com/Seikaijyu/RWKV-PEFT)，此版本一定经过验证，嗯...至少比RWKV-PEFT的原始地址验证的多一些（你如果经常更新版本可能会发现原始地址提供的RWKV-PEFT可能不可用）原始地址提供的版本更像是dev版，而此[fork版本](https://github.com/Seikaijyu/RWKV-PEFT)则只会在尝试版本可用后更新，或者会因为新版本出现问题而回退，特别推荐！
 #### 现在，你每次运行的微调脚本将被记录在`history_run_command.sh.log`文件中。嗯......或许可以在遇到有关RWKV-PEFT的问题时把`history_run_command.sh.log`文件中使用的脚本参数作为证据提供给J.L，或者在RWKV-PEFT项目开一个issue后把参数作为证据提供给J.L，谁知道呢~
 #### 依赖项目RWKV-PEFT现在需要`torch>=2.5.1`（同时别忘了安装GPU版本，如`2.5.1+cu121`，使用`pip install torch==2.5.1+cu121 --index-url https://download.pytorch.org/whl/cu12`安装，如果你需要此版本的话）
-#### 现在如需在torch==2.5.1+cu121环境下进行state tuning微调，需要使用此命令`pip install rwkv-fla==0.1.202502070725`将rwkv-fla安装至老版本，同时使用此命令`pip install triton==3.1.0`将triton安装为符合torch2.5.1的版本后即可进行state tuning
+#### 如需在torch==2.5.1+cu121环境下进行state tuning微调，需要使用此命令`pip install rwkv-fla==0.1.202502070725`将rwkv-fla安装至老版本，同时使用此命令`pip install triton==3.1.0`将triton安装为符合torch2.5.1的版本后即可进行state tuning
 #### 为gpu服务器微调者提供了一个快捷环境安装脚本`gpu_server_installer.sh`，可以一键安装环境（包括wandb），不过模型和数据集还是要自己下载和安装
 #### 提供了更多参数设置和使用的例子，查看`training_disha_example.sh`和`training_stat
 e_tuning_example.sh`文件以确定如何使用`RWKV-PEFT-Simple`为你带来便捷！祝微调顺利~
